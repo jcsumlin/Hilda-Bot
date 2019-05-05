@@ -1,9 +1,10 @@
 simplejson
 pytz
 APScheduler
-discord.py
+discord.py==0.16.12
 gspread
 oauth2client
 sqlalchemy
 loguru
 python-dateutil
+bs4
