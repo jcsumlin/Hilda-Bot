@@ -1,0 +1,9 @@
+simplejson
+pytz
+APScheduler
+discord.py
+gspread
+oauth2client
+sqlalchemy
+loguru
+python-dateutil

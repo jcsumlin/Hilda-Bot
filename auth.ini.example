@@ -1,0 +1,19 @@
+[discord]
+TOKEN=
+PREFIX=!
+KUDOS_ID=<:ID:name>
+KUDOS_REACTION_ID=
+LIVE=0
+
+[level-roles]
+lvl_3=Elf
+lvl_15=Twig
+lvl_25=Giant
+lvl_35=Sparrow Scout
+lvl_50=Adventurer
+lvl_60=Librarian
+lvl_69=Johanna
+lvl_75=Tide Mouse
+lvl_80=Marra
+lvl_90=Weather Spirit
+lvl_100=Thunder Bird
