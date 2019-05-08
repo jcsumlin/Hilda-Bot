@@ -1096,6 +1096,7 @@ class Submission:
         else:
             raise error
     async def checkChannel(self, ctx):
+        # TODO: Un-comment this for live.
         # if ctx.message.channel.id in self.approvedChannels:
         #     return True
         # else:

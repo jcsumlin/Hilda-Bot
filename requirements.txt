@@ -8,4 +8,4 @@ sqlalchemy
 loguru
 python-dateutil
 bs4
-git
+GitPython
