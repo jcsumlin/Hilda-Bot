@@ -659,9 +659,7 @@ class Submission:
     async def help(self, ctx, command=None):
         if command is None:
             embed = discord.Embed(title="Hildabot Help",
-                                  description='Here is a list of all of the commands you can use! '
-                                              'If you want more in-depth information on any specific '
-                                              'command, just do "!help [command name]"',
+                                  description='Here is a list of all of the commands you can use!',
                                   color=0x90BDD4)
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
             role_names = [role.name for role in ctx.message.author.roles]
