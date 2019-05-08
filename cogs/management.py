@@ -31,7 +31,7 @@ class Management:
 
     @commands.command(pass_context=True)
     async def update(self, ctx):
-        if ctx.message.author.id == 204792579881959424 or ctx.message.author.id == 169983837168861184:
+        if ctx.message.author.id == "204792579881959424" or ctx.message.author.id == "169983837168861184":
             git_dir = "./"
             try:
                 g = git.cmd.Git(git_dir)
@@ -45,4 +45,4 @@ class Management:
                                       color=0xff0007)
                 await self.bot.send_message(ctx.message.channel, embed=embed)
         else:
-            await ctx.message.channel.send("You don't have access to this command!")
+            await self.bot.send_message("You don't have access to this command!")
