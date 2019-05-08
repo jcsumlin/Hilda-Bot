@@ -46,5 +46,6 @@ class Management:
                 await self.bot.send_message(ctx.message.channel, embed=embed)
         else:
             await self.bot.send_message("You don't have access to this command!")
+
 def setup(bot):
     bot.add_cog(Management(bot))
