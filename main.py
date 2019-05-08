@@ -82,6 +82,7 @@ async def unload(extension):
 
 
 if __name__ == "__main__":
+    bot.remove_command('help')
     extensions = load_cogs('cogs')
     for extension in extensions:
         try:
