@@ -673,12 +673,12 @@ class Submission:
                                 value="Removes a user's submissions from the database "
                                       "(Staff only! VERY DANGEROUS)",
                                 inline=False)
+                embed.add_field(name="!rollback [message id]",
+                                value="removes a submission from the DB and rolls back the xp "
+                                      "gained from it. (Staff only!)",
+                                inline=False)
             embed.add_field(name="!leaderboard",
                             value="Shows you the top 10 users in in the server.",
-                            inline=False)
-            embed.add_field(name="!rollback [message id]",
-                            value="removes a submission from the DB and rolls back the xp "
-                                  "gained from it. (Staff only!)",
                             inline=False)
             embed.add_field(name="!stats", value="To see your current scorecard", inline=False)
             embed.add_field(name="!submit",
@@ -697,28 +697,14 @@ class Submission:
             embed.add_field(name="!randomidea",
                             value="Having trouble figuring out what to create?",
                             inline=False)
-            embed.add_field(name="!rollback [message id]",
-                            value="removes a submission from the DB and rolls back the xp "
-                                  "gained from it. (Staff only!)",
-                            inline=False)
-            embed.add_field(name="!stats", value="To see your current scorecard", inline=False)
-            embed.add_field(name="!submit",
-                            value="To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                  "into discord and add '!submit' as a comment to it.",
-                            inline=False)
-            embed.add_field(name="!submit [link]",
-                            value="If you'd like to submit via internet link, make sure you right click"
-                                  " the image and select 'copy image location' and submit that URL using"
-                                  " the !submit command.",
-                            inline=False)
-            embed.add_field(name="!timeleft",
-                            value="The !timeleft command will let you know how much longer you have "
-                                  "left to submit for the day!",
-                            inline=False)
             embed.add_field(name="!idea [idea]",
                             value="Add a random idea to the \"randomidea\" list!",
                             inline=False)
             embed.add_field(name="!levelwarning [on | off]",
+                            value="To turn on or off the DM warning system about your leveling on the server."
+                                  "command !levelwarning on or !levelwarning off.",
+                            inline=False)
+            embed.add_field(name="!streakwarning [on | off]",
                             value="To turn on or off the PM warning system about your streak use the "
                                   "command !levelwarning on or !levelwarning off.",
                             inline=False)
