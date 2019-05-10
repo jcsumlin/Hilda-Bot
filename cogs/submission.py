@@ -219,7 +219,7 @@ class Submission:
     @commands.command(pass_context=True)
     async def leaderboard(self, ctx):
         if await self.checkChannel(ctx):
-            leaderboard = self.session.query(User).filter(User.server_id == ctx.message.server.id).order_by(desc(User.level)).limit(10)
+            leaderboard = self.session.query(User).order_by(desc(User.level)).limit(10)
             embed = discord.Embed(title="__**Leaderboard**__", thumbnail=ctx.message.server.icon, description="The top 10 users of this server!", colour=0xb2cefe)
             for user in leaderboard:
                 embed.add_field(name=":black_small_square: " + user.name + f"  Level: {user.level} | XP: {user.currentxp}", value="==========", inline=False)
@@ -1094,14 +1094,13 @@ class Submission:
         else:
             raise error
     async def checkChannel(self, ctx):
-        # TODO: Un-comment this for live.
-        # if ctx.message.channel.id in self.approvedChannels:
-        #     return True
-        # else:
-        #     await self.commandError(channel=ctx.message.channel,
-        #                             message='Cannot respond within this channel')
-        #     return False
-        return True
+        if ctx.message.channel.id in self.approvedChannels:
+            return True
+        else:
+            await self.commandError(channel=ctx.message.channel,
+                                    message='Cannot respond within this channel')
+            return False
+        # return True
 
 def setup(bot):
     bot.add_cog(Submission(bot))
