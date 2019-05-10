@@ -520,6 +520,7 @@ class Submission:
                 await self.bot.send_message(ctx.message.channel, "```Markdown\n#Something went wrong.\n```")
                 self.session.rollback()
 
+    @commands.has_role("Giant")
     @commands.command(pass_context=True)
     async def kots(self, ctx):
         with open(f'data/server/cursedhilda.png', 'rb') as f:
