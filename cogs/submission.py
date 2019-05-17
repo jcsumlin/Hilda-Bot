@@ -50,9 +50,7 @@ class Submission:
         self.auth.read('../auth.ini')
         self.mee6leaderboardUrl = "https://mee6.xyz/api/plugins/levels/leaderboard/492572315138392064?limit=999"
         self.messageSetting = 0
-        self.approvedChannels = ['495034452422950915', '538968395538759691', '492579714674720778',
-                                 '492580926111481859', '492580873628286976', '492578733442465804',
-                                 '495752934890536971', '493352703519490078', '565327145786802176']
+        self.approvedChannels = dataIO.load_json("data/xp/allowed_channels.json")
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -80,6 +78,68 @@ class Submission:
     async def commandSuccess(self, title, desc, channel):
         embed = discord.Embed(title=title, description=desc, color=0x00df00)
         await self.bot.send_message(channel, embed=embed)
+
+    @commands.group(name="xp", pass_context=True)
+    @commands.has_permissions(manage_messages=True)
+    async def xp(self, ctx):
+        if ctx.invoked_subcommand is None:
+            embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
+            embed.add_field(name="!xp add [channel]", value="Adds a channel to the list of channels users can gain xp from.")
+            embed.add_field(name="!xp delete [channel]", value="Removes a channel to the list of channels users can gain xp from.")
+            embed.add_field(name="!xp list", value="Displays the list of channels users can gain xp from.")
+            await self.bot.send_message(ctx.message.channel, embed=embed)
+
+    @xp.group(pass_context=True)
+    async def add(self, ctx, channel: discord.Channel = None):
+        if channel == None:
+            embed = discord.Embed(title="That's not how you use that command!",
+                                  description="!xp add #channel-to-add", color=discord.Color.red())
+            await self.bot.send_message(ctx.message.channel, embed=embed)
+        else:
+            channel_id = str(channel.id)
+            self.approvedChannels.append(channel_id)
+            try:
+                dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
+                embed = discord.Embed(title=f"Successfully added channel {channel.name} to approved list!",
+                                      color=discord.Color.green())
+                await self.bot.send_message(ctx.message.channel, embed=embed)
+            except:
+                embed = discord.Embed(title="Error while saving channel to file!!",
+                                      color=discord.Color.red())
+                await self.bot.send_message(ctx.message.channel, embed=embed)\
+
+
+    @xp.group(pass_context=True)
+    async def delete(self, ctx, channel: discord.Channel = None):
+        if channel == None:
+            embed = discord.Embed(title="That's not how you use that command!",
+                                  description="!xp delete #channel-to-add", color=discord.Color.red())
+            await self.bot.send_message(ctx.message.channel, embed=embed)
+        else:
+            channel_id = str(channel.id)
+            if channel_id in self.approvedChannels:
+                self.approvedChannels.remove(channel_id)
+                try:
+                    dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
+                    embed = discord.Embed(
+                        title=f"Successfully removed channel {channel.name} from the approved list!",
+                        color=discord.Color.green())
+                    await self.bot.send_message(ctx.message.channel, embed=embed)
+                except:
+                    embed = discord.Embed(title="Error while saving file!!",
+                                          color=discord.Color.red())
+                    await self.bot.send_message(ctx.message.channel, embed=embed)
+            else:
+                embed = discord.Embed(title="Channel is not in the approved list!",
+                                      color=discord.Color.red())
+                await self.bot.send_message(ctx.message.channel, embed=embed)
+
+    @xp.group(pass_context=True)
+    async def list(self, ctx):
+        embed = discord.Embed(title="List of channels users can gain XP in.")
+        for channel in self.approvedChannels:
+            embed.add_field(name=f"{self.bot.get_channel(channel).name}", value=f"ID: {channel}")
+        await self.bot.send_message(ctx.message.channel, embed=embed)
 
     @commands.has_role("Staff")
     @commands.command(pass_context=True)
@@ -1089,5 +1149,23 @@ class Submission:
             return False
         # return True
 
+def check_folders():
+    if not os.path.exists("data/xp"):
+        print("Creating data/xp folder...")
+        os.makedirs("data/xp")
+
+
+def check_files():
+    stream_files = (
+        "allowed_channels.json"
+    )
+
+    for filename in stream_files:
+        if not dataIO.is_valid_json("data/xp/" + filename):
+            logger.debug("Creating empty {}...".format(filename))
+            dataIO.save_json("data/xp/" + filename, [])
+
 def setup(bot):
+    check_folders()
+    check_files()
     bot.add_cog(Submission(bot))
