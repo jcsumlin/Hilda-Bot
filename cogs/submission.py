@@ -108,12 +108,11 @@ class Submission:
                                       color=discord.Color.red())
                 await self.bot.send_message(ctx.message.channel, embed=embed)\
 
-
-    @xp.group(pass_context=True)
-    async def delete(self, ctx, channel: discord.Channel = None):
+    @xp.group()
+    async def delete(self, channel: discord.Channel = None):
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
-                                  description="!xp delete #channel-to-add", color=discord.Color.red())
+                                  description="!xp delete #channel-to-delete", color=discord.Color.red())
             await self.bot.say(embed=embed)
         else:
             channel_id = str(channel.id)
@@ -124,15 +123,15 @@ class Submission:
                     embed = discord.Embed(
                         title=f"Successfully removed channel {channel.name} from the approved list!",
                         color=discord.Color.green())
-                    await self.bot.send_message(ctx.message.channel, embed=embed)
+                    await self.bot.say(embed=embed)
                 except:
                     embed = discord.Embed(title="Error while saving file!!",
                                           color=discord.Color.red())
-                    await self.bot.send_message(ctx.message.channel, embed=embed)
+                    await self.bot.say(embed=embed)
             else:
                 embed = discord.Embed(title="Channel is not in the approved list!",
                                       color=discord.Color.red())
-                await self.bot.send_message(ctx.message.channel, embed=embed)
+                await self.bot.say(embed=embed)
 
     @xp.group(pass_context=True)
     async def list(self, ctx):
