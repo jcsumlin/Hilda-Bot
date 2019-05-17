@@ -157,6 +157,8 @@ class Submission:
             logger.success("Done")
 
     async def on_message(self, message):
+        if message.author.bot:
+            return
         if message.content.startswith('!') == False and message.author != self.bot.user: #553858156791332864
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
