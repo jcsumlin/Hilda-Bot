@@ -59,8 +59,8 @@ async def load(ctx, extension):
     except Exception as error:
         logger.exception(f"Extension {extension} could not be loaded. [{error}]")
 
+# TODO: Add @commands.has_permissions(administrator=True) back to this command
 @bot.command(pass_context=True)
-@commands.has_permissions(administrator=True)
 @commands.has_role("Hildabot Commander")
 async def reload(ctx, extension):
     try:
