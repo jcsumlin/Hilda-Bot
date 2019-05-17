@@ -85,7 +85,7 @@ class Submission:
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
             embed.add_field(name="!xp add [channel]", value="Adds a channel to the list of channels users can NOT gain xp from.")
-            embed.add_field(name="!xp delete [channel]", value="Removes a channel to the list of channels users can NOT gain xp from.")
+            embed.add_field(name="!xp remove [channel]", value="Removes a channel to the list of channels users can NOT gain xp from.")
             embed.add_field(name="!xp list", value="Displays the list of channels users can NOT gain xp from.")
             await self.bot.send_message(ctx.message.channel, embed=embed)
 
@@ -112,7 +112,7 @@ class Submission:
     async def remove(self, channel: discord.Channel = None):
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
-                                  description="!xp delete #channel-to-delete", color=discord.Color.red())
+                                  description="!xp remove #channel-to-delete", color=discord.Color.red())
             await self.bot.say(embed=embed)
         else:
             channel_id = str(channel.id)
