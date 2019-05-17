@@ -80,7 +80,7 @@ class Submission:
         await self.bot.send_message(channel, embed=embed)
 
     @commands.group(name="xp", pass_context=True)
-    @commands.has_permissions(manage_messages=True)
+    # @commands.has_permissions(manage_messages=True)
     async def xp(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
