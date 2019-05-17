@@ -138,7 +138,7 @@ class Submission:
     async def list(self, ctx):
         embed = discord.Embed(title="List of channels users can gain XP in.")
         for channel in self.approvedChannels:
-            embed.add_field(name=f"{self.bot.get_channel(channel).name}", value=f"ID: {channel}")
+            embed.add_field(name=f"{self.bot.get_channel(channel).name}", value=f"ID: {channel}", inline=False)
         await self.bot.send_message(ctx.message.channel, embed=embed)
 
     @commands.has_role("Staff")
