@@ -1156,14 +1156,9 @@ def check_folders():
 
 
 def check_files():
-    stream_files = (
-        "allowed_channels.json"
-    )
-
-    for filename in stream_files:
-        if not dataIO.is_valid_json("data/xp/" + filename):
-            logger.debug("Creating empty {}...".format(filename))
-            dataIO.save_json("data/xp/" + filename, [])
+    if not dataIO.is_valid_json("data/xp/allowed_channels.json"):
+        logger.debug("Creating empty allowed_channels.json...")
+        dataIO.save_json("data/xp/allowed_channels.json", [])
 
 def setup(bot):
     check_folders()
