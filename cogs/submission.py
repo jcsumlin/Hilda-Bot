@@ -109,7 +109,7 @@ class Submission:
                 await self.bot.send_message(ctx.message.channel, embed=embed)\
 
     @xp.group()
-    async def delete(self, channel: discord.Channel = None):
+    async def remove(self, channel: discord.Channel = None):
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
                                   description="!xp delete #channel-to-delete", color=discord.Color.red())
