@@ -84,9 +84,9 @@ class Submission:
     async def xp(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
-            embed.add_field(name="!xp add [channel]", value="Adds a channel to the list of channels users can gain xp from.")
-            embed.add_field(name="!xp delete [channel]", value="Removes a channel to the list of channels users can gain xp from.")
-            embed.add_field(name="!xp list", value="Displays the list of channels users can gain xp from.")
+            embed.add_field(name="!xp add [channel]", value="Adds a channel to the list of channels users can NOT gain xp from.")
+            embed.add_field(name="!xp delete [channel]", value="Removes a channel to the list of channels users can NOT gain xp from.")
+            embed.add_field(name="!xp list", value="Displays the list of channels users can NOT gain xp from.")
             await self.bot.send_message(ctx.message.channel, embed=embed)
 
     @xp.group(pass_context=True)
@@ -100,7 +100,7 @@ class Submission:
             self.approvedChannels.append(channel_id)
             try:
                 dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
-                embed = discord.Embed(title=f"Successfully added channel {channel.name} to approved list!",
+                embed = discord.Embed(title=f"Successfully added channel {channel.name} to banned list!",
                                       color=discord.Color.green())
                 await self.bot.send_message(ctx.message.channel, embed=embed)
             except:
@@ -136,7 +136,7 @@ class Submission:
 
     @xp.group(pass_context=True)
     async def list(self, ctx):
-        embed = discord.Embed(title="List of channels users can gain XP in.")
+        embed = discord.Embed(title="List of channels users can NOT gain XP in.")
         for channel in self.approvedChannels:
             embed.add_field(name=f"{self.bot.get_channel(channel).name}", value=f"ID: {channel}", inline=False)
         await self.bot.send_message(ctx.message.channel, embed=embed)
