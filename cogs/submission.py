@@ -955,15 +955,15 @@ class Submission:
             else:
                 logger.error(f"Role {self.auth.get('level-roles', f'lvl_{current_level}')} does not exist on this server")
                 return
-            if levels.index(current_level) != 0:
-                role_remove = levels[(levels.index(current_level) - 1)]
-                role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', f'lvl_{role_remove}'))
-                if role_remove != None:
-                    await self.bot.remove_roles(ctx.author, role_remove)
-                else:
-                    logger.error(
-                        f"Role to be removed does not exist on this server")
-                    return
+            # if levels.index(current_level) != 0:
+            #     role_remove = levels[(levels.index(current_level) - 1)]
+            #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', f'lvl_{role_remove}'))
+            #     if role_remove != None:
+            #         await self.bot.remove_roles(ctx.author, role_remove)
+            #     else:
+            #         logger.error(
+            #             f"Role to be removed does not exist on this server")
+            #         return
 
         # role_updated = False
         # if current_level == 3:
