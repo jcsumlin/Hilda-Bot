@@ -219,7 +219,7 @@ class Submission:
     @commands.command(pass_context=True)
     async def leaderboard(self, ctx):
         if await self.checkChannel(ctx):
-            leaderboard = self.session.query(User).order_by(desc(User.level)).limit(10)
+            leaderboard = self.session.query(User).order_by(User.level.desc(), User.currentxp.desc()).limit(10)
             embed = discord.Embed(title="__**Leaderboard**__", thumbnail=ctx.message.server.icon, description="The top 10 users of this server!", colour=0xb2cefe)
             for user in leaderboard:
                 embed.add_field(name=":black_small_square: " + user.name + f"  Level: {user.level} | XP: {user.currentxp}", value="==========", inline=False)
