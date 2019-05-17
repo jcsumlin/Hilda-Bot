@@ -114,7 +114,7 @@ class Submission:
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
                                   description="!xp delete #channel-to-add", color=discord.Color.red())
-            await self.bot.send_message(ctx.message.channel, embed=embed)
+            await self.bot.say(embed=embed)
         else:
             channel_id = str(channel.id)
             if channel_id in self.approvedChannels:
