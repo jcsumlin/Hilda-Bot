@@ -1,4 +1,3 @@
-import asyncio
 import configparser
 import datetime
 import json
@@ -16,13 +15,11 @@ import simplejson as json
 import sqlalchemy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bs4 import BeautifulSoup
-from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 from loguru import logger
 # scheduling stuff
 from pytz import utc
 from sqlalchemy import create_engine
-from sqlalchemy import desc
 from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -30,7 +27,6 @@ from sqlalchemy.orm import sessionmaker
 # declaration for User class is in here
 from create_databases import Base, User, Content
 from .utils.dataIO import dataIO
-from .utils.dataIO import fileIO
 
 
 class Submission:
@@ -51,6 +47,7 @@ class Submission:
         self.mee6leaderboardUrl = "https://mee6.xyz/api/plugins/levels/leaderboard/492572315138392064?limit=999"
         self.messageSetting = 0
         self.approvedChannels = dataIO.load_json("data/xp/allowed_channels.json")
+        self.epoch = datetime.utcfromtimestamp(0)
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -80,7 +77,7 @@ class Submission:
         await self.bot.send_message(channel, embed=embed)
 
     @commands.group(name="xp", pass_context=True)
-    # @commands.has_permissions(manage_messages=True)
+    # @commands.has_role("Staff")
     async def xp(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
@@ -92,21 +89,15 @@ class Submission:
     @xp.group(pass_context=True)
     async def add(self, ctx, channel: discord.Channel = None):
         if channel == None:
-            embed = discord.Embed(title="That's not how you use that command!",
-                                  description="!xp add #channel-to-add", color=discord.Color.red())
-            await self.bot.send_message(ctx.message.channel, embed=embed)
+            await self.commandError("That's not how you use that command!: `!xp add #channel-to-add`", ctx.message.channel)
         else:
             channel_id = str(channel.id)
             self.approvedChannels.append(channel_id)
             try:
                 dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
-                embed = discord.Embed(title=f"Successfully added channel {channel.name} to banned list!",
-                                      color=discord.Color.green())
-                await self.bot.send_message(ctx.message.channel, embed=embed)
+                await self.commandSuccess("Success!", f"Successfully added channel {channel.name} to banned list!", ctx.message.channel)
             except:
-                embed = discord.Embed(title="Error while saving channel to file!!",
-                                      color=discord.Color.red())
-                await self.bot.send_message(ctx.message.channel, embed=embed)\
+                await self.commandError("Error while saving channel to file!!", ctx.message.channel)
 
     @xp.group()
     async def remove(self, channel: discord.Channel = None):
@@ -159,7 +150,7 @@ class Submission:
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.content.startswith('!') == False and message.author != self.bot.user: #553858156791332864
+        if message.content.startswith('!') == False:
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
                 xp = int(len(message.content.split())*0.5)
@@ -212,8 +203,6 @@ class Submission:
                     content_author.score -= 1
                     # commit session
                     self.session.commit()
-                else:
-                    logger.error("No plz")
         except:
             logger.error("Adding reaction broke for user " + userToUpdate)
 
@@ -514,7 +503,7 @@ class Submission:
             # create new user object
             new_user = User(name=message.author.name, server_id=str(message.server.id), level=1, id=message.author.id, startdate=curdate, currency=0,
                             streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0, totalsubmissions=0,
-                            currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True)
+                            currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True, xptime=(datetime.utcnow() - self.epoch).total_seconds())
             # add to session
             self.session.add(new_user)
             # # give relevant roles
@@ -540,9 +529,9 @@ class Submission:
             #             logger.error('Could not create/assign role: Artists')
             # commit session
             self.session.commit()
-            logger.success(f"+ Successfully registered {message.author.name}")
+            logger.success(f"Successfully registered {message.author.name}")
         else:
-            logger.error(f"# {message.author.name} is already registered!")
+            logger.error(f"{message.author.name} is already registered!")
 
     @commands.command(pass_context=True)
     async def randomidea(self, ctx):
@@ -703,18 +692,17 @@ class Submission:
             lvl_end = stats['next_level_required_xp']
             if xp > lvl_end:
                 stats['level'] += 1
-                new_xp_total = xp - stats['next_level_required_xp']
-                db_user.level = str(stats['level'])
-                db_user.currentxp = str(new_xp_total)
+                db_user.level = int(stats['level'])
+                db_user.currentxp = 0
                 await self.updateRole(stats['level'], message)
                 self.session.commit()
                 if db_user.levelnotification != False:
-                    await self.commandSuccess(f'@{stats["user_name"]} Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
+                    await self.commandSuccess(f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
                                             'To turn off this notification do !levelwarning off in any channel.',
                                             message.author)
                     return
             else:
-                await self.checkLevel(message, db_user.level)
+                await self.checkLevelRole(message, db_user.level)
 
     @commands.cooldown(1,30, commands.BucketType.channel)
     @commands.command(pass_context=True)
@@ -814,7 +802,6 @@ class Submission:
                                       "```diff\n- I couldn't find your name in our spreadsheet. Are you sure you're registered? If you are, contact an admin immediately.\n```")
         else:
             # db_user is our member object
-
             # check if already submitted
             if db_user.submitted == 1:
                 logger.error(str(userToUpdate.name) + ' already submitted')
@@ -836,8 +823,8 @@ class Submission:
                     current_level = current_level + 1
                     # self.levelUpUser(current_level, userToUpdate)
                     new_xp_total = new_xp_total - next_level_required_xp
-                    db_user.level = str(current_level)
-                    db_user.currentxp = str(new_xp_total)
+                    db_user.level = int(current_level)
+                    db_user.currentxp = int(new_xp_total)
                     server_id = message.server.id
                     if db_user.levelnotification == True:
                         await self.commandSuccess(
@@ -1100,14 +1087,17 @@ class Submission:
         return stats
 
     async def giveXP(self, db_user, xp):
-        if (db_user == None):
-            return
-        else:
-            await self.getUserStats(db_user)
-            db_user.currentxp += int(xp)
-            self.session.commit()
+        if db_user != None:
+            time_diff = (datetime.utcnow() - self.epoch).total_seconds() - db_user.xptime
+            if time_diff >= 30:
+                # await self.getUserStats(db_user)
+                db_user.xptime = (datetime.utcnow() - self.epoch).total_seconds()
+                db_user.currentxp += int(xp)
+                self.session.commit()
+            else:
+                logger.debug("xp on cooldown")
 
-    async def checkLevel(self, message, current_level):
+    async def checkLevelRole(self, message, current_level):
         levels = []
         for key in self.auth['level-roles']:
             # logger.info(key)
@@ -1141,6 +1131,7 @@ class Submission:
             raise error  # re-raise the error so all the errors will still show up in console
         else:
             raise error
+
     async def checkChannel(self, ctx):
         if ctx.message.channel.id in self.approvedChannels:
             return True

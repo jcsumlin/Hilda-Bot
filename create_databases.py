@@ -1,11 +1,9 @@
 import os
-import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import Column, Integer, String, Date, Boolean, Float
 from sqlalchemy import create_engine
-from datetime import datetime
- 
+from sqlalchemy.ext.declarative import declarative_base
+
 Base = declarative_base()
  
 class User(Base):
@@ -29,6 +27,7 @@ class User(Base):
     highscore = Column(Integer, nullable=False)
     decaywarning = Column(Boolean, nullable=False)
     levelnotification = Column(Boolean, nullable=False, default=True)
+    xptime = Column(Float, nullable=False)
 
 class Content(Base):
     __tablename__ = 'content'
@@ -49,3 +48,6 @@ engine = create_engine('sqlite:///database.db')
 # Create all tables in the engine. This is equivalent to "Create Table"
 # statements in raw SQL.
 Base.metadata.create_all(bind=engine)
+# moves database to correct folder for bot to function
+if __name__ == '__main__':
+    os.rename('./database.db', './cogs/database.db')
