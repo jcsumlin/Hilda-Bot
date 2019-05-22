@@ -1094,8 +1094,6 @@ class Submission:
                 db_user.xptime = (datetime.utcnow() - self.epoch).total_seconds()
                 db_user.currentxp += int(xp)
                 self.session.commit()
-            else:
-                logger.debug("xp on cooldown")
 
     async def checkLevelRole(self, message, current_level):
         levels = []
