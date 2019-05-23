@@ -112,7 +112,7 @@ class Submission:
                 try:
                     dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
                     embed = discord.Embed(
-                        title=f"Successfully removed channel {channel.name} from the approved list!",
+                        title=f"Successfully removed channel {channel.name} from the banned list!",
                         color=discord.Color.green())
                     await self.bot.say(embed=embed)
                 except:
@@ -656,13 +656,13 @@ class Submission:
                 if new_xp_total < 0: # decrease level
                     current_level = current_level - 1
                     next_level_required_xp = current_level * 10 + 50
-                    new_xp_total = new_xp_total - next_level_required_xp
-                    db_user.level = str(current_level)
-                    db_user.currentxp = str(new_xp_total)
+                    new_xp_total = next_level_required_xp + new_xp_total
+                    db_user.level = int(current_level)
+                    db_user.currentxp = int(new_xp_total)
 
                 # otherwise just increase exp
                 else:
-                    db_user.currentxp = str(new_xp_total)
+                    db_user.currentxp = int(new_xp_total)
                 # update high score if it's higher
                 if new_streak > db_user.highscore:
                     db_user.highscore = new_streak
@@ -675,7 +675,7 @@ class Submission:
                 self.session.commit()
                 await self.bot.send_message(ctx.message.channel,
                                       "```diff\n+ Submission has been removed from the DB.\n```")
-
+                await self.updateRole(db_user.level, ctx.message)
             elif remove is False:
                 await self.bot.send_message(ctx.message.channel,
                                       "```diff\n- Error Removing Submission from DB, check logs.\n```")
@@ -685,6 +685,10 @@ class Submission:
                                       "```diff\n- Error Removing Submission from DB, check logs.\n```")
 
     async def levelup(self, message):
+        """
+        :param message: discord message object
+        :return:
+        """
         db_user = await self.getDBUser(message.author.id)
         if db_user != None:
             stats = await self.getUserStats(db_user)
@@ -778,6 +782,13 @@ class Submission:
             logger.error(e)
 
     async def normalSubmit(self, message, userToUpdate, comment):
+        """
+
+        :param message: discord message object
+        :param userToUpdate: discord author object
+        :param comment: extracted comment from !submit
+        :return:
+        """
         logger.debug('submitting for ' + str(userToUpdate.name))
         jsonstr = json.dumps(message.attachments[0])
         jsondict = json.loads(jsonstr)
@@ -786,6 +797,14 @@ class Submission:
         await self.handleSubmit(message, userToUpdate, url, comment)
 
     async def handleSubmit(self, message, userToUpdate, url, comment):
+        """
+
+        :param message: discord message object
+        :param userToUpdate: discord user object
+        :param url: discord CDN url
+        :param comment: extracted comment from command
+        :return:
+        """
         curdate = datetime.utcnow()
         potentialstreak = curdate + timedelta(days=7)
         today = "{0}-{1}-{2}".format(curdate.month, curdate.day, curdate.year)
@@ -847,6 +866,7 @@ class Submission:
                 self.session.commit()
                 await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id), comments=comment)
                 logger.success("finishing updating " + db_user.name + "'s stats")
+                await self.updateRole(db_user.level, message)
                 await self.bot.send_message(message.channel,
                                           "```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
                                               userToUpdate.name, xp_gained))
@@ -930,20 +950,53 @@ class Submission:
             pass
         return done  # this value will be None or a valid user, make sure to check
 
-    async def updateRole(self, current_level, ctx):
+    async def updateRole(self, current_level, message: discord.Message):
+        logger.info("Checking user for role updates")
         levels = []
         for key in self.auth['level-roles']:
             # logger.info(key)
             level = re.search("^lvl_(\d+)$", key)
             levels.append(int(level.group(1)))
-        if current_level in levels:
-            logger.info("updating roles")
-            role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', f'lvl_{current_level}'))
-            if role != None:
-                await self.bot.add_roles(ctx.author, role)
-            else:
-                logger.error(f"Role {self.auth.get('level-roles', f'lvl_{current_level}')} does not exist on this server")
+        if current_level < levels[0]:
+            logger.info("Users level is less than lowest in config")
+            #assign no roles and make sure they have no roles
+            await self.removeAllRoles(message)
+            return
+        for level in levels:
+            if current_level >= levels[-1]:
+                logger.info("updating roles")
+                # User has max role, just check to see if they still have the right role
+                await self.checkLevelRole(message, current_level)
                 return
+            elif current_level >= level and current_level < levels[levels.index(level)+1]:
+                # user needs  the role associated with level
+                logger.info("user needs the role associated with level")
+                try:
+                    role_name = self.auth.get('level-roles', f'lvl_{current_level}')
+                    role_to_add = discord.utils.get(message.server.roles,
+                                                name=role_name)
+                except configparser.NoOptionError:
+                    pass
+
+                higher_roles = levels[levels.index(level)+1:]
+                logger.info(higher_roles)
+                await self.removeHigherRoles(message, higher_roles)
+                try:
+                    await self.bot.add_roles(message.author, role_to_add)
+                except NameError:
+                    logger.error("hit name error")
+                    pass
+                return
+
+        # if current_level in levels:
+        #     logger.info("updating roles")
+        #     role = discord.utils.get(ctx.server.roles,
+        #                              name=self.auth.get('level-roles', f'lvl_{current_level}'))
+        #     if role != None:
+        #         await self.bot.add_roles(ctx.author, role)
+        #     else:
+        #         logger.error(f"Role {self.auth.get('level-roles', f'lvl_{current_level}')} does not exist on this server")
+        #         return
             # if levels.index(current_level) != 0:
             #     role_remove = levels[(levels.index(current_level) - 1)]
             #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', f'lvl_{role_remove}'))
@@ -1095,7 +1148,13 @@ class Submission:
                 db_user.currentxp += int(xp)
                 self.session.commit()
 
-    async def checkLevelRole(self, message, current_level):
+    async def checkLevelRole(self, message: discord.Message, current_level: int):
+        """
+
+        :param message: discord message object
+        :param current_level: int
+        :return:
+        """
         levels = []
         for key in self.auth['level-roles']:
             # logger.info(key)
@@ -1138,6 +1197,48 @@ class Submission:
                                     message='Cannot respond within this channel')
             return False
         # return True
+
+    async def removeAllRoles(self, message: discord.Message):
+        """
+        Remove all level roles associate with this bot
+        :param ctx:
+        :return:
+        """
+        logger.info(f"Removing all roles for {message.author.name}")
+        level_roles = [y[1] for y in self.auth.items("level-roles")]
+        for role_name in level_roles:
+            role = discord.utils.get(message.server.roles, name=role_name)
+            if role in message.author.roles:
+                try:
+                    await self.bot.remove_roles(message.author, role)
+                    logger.info(f"Removed {role.name} from {message.author.name}")
+                except:
+                    logger.error(f"Error removing {role.name    }")
+
+    async def removeHigherRoles(self, message: discord.Message, higher_roles):
+        """
+        :param ctx: discord message object
+        :param higher_roles: list if ints corresponding to roles in config file
+        :return:
+        """
+        users_roles = [y for y in message.author.roles]
+        higher_roles = [discord.utils.get(message.server.roles, name=self.auth.get('level-roles', f'lvl_{level}')) for level in higher_roles]
+        _removed = 0
+        if not any(x in higher_roles for x in users_roles):
+            logger.info("None of the higher roles are on this user, returning")
+            return
+        for role in higher_roles:
+            if role in message.author.roles:
+                try:
+                    await self.bot.remove_roles(message.author, role)
+                    _removed += 1
+                except:
+                    logger.error(f"Couldn't remove role from user: {role.name}")
+                    pass
+        logger.success(f"Removed {_removed} roles from user")
+        return
+
+
 
 def check_folders():
     if not os.path.exists("data/xp"):
