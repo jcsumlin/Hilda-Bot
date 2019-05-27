@@ -1,3 +1,4 @@
+import asyncio
 import configparser
 import datetime
 import json
@@ -19,7 +20,7 @@ from discord.ext import commands
 from loguru import logger
 # scheduling stuff
 from pytz import utc
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -46,7 +47,8 @@ class Submission:
         self.auth.read('../auth.ini')
         self.mee6leaderboardUrl = "https://mee6.xyz/api/plugins/levels/leaderboard/492572315138392064?limit=999"
         self.messageSetting = 0
-        self.approvedChannels = dataIO.load_json("data/xp/allowed_channels.json")
+        self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
+        self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
 
     async def setGame(self):
@@ -70,66 +72,12 @@ class Submission:
         embed = discord.Embed(title="Command Error!",
                               description=message,
                               color=0xff0007)
-        await self.bot.send_message(channel, embed=embed)
+        sent_message = await self.bot.send_message(channel, embed=embed)
+        return sent_message
 
     async def commandSuccess(self, title, desc, channel):
         embed = discord.Embed(title=title, description=desc, color=0x00df00)
         await self.bot.send_message(channel, embed=embed)
-
-    @commands.group(name="xp", pass_context=True)
-    # @commands.has_role("Staff")
-    async def xp(self, ctx):
-        if ctx.invoked_subcommand is None:
-            embed = discord.Embed(title="That's not how you use that command!", color=discord.Color.red())
-            embed.add_field(name="!xp add [channel]", value="Adds a channel to the list of channels users can NOT gain xp from.")
-            embed.add_field(name="!xp remove [channel]", value="Removes a channel to the list of channels users can NOT gain xp from.")
-            embed.add_field(name="!xp list", value="Displays the list of channels users can NOT gain xp from.")
-            await self.bot.send_message(ctx.message.channel, embed=embed)
-
-    @xp.group(pass_context=True)
-    async def add(self, ctx, channel: discord.Channel = None):
-        if channel == None:
-            await self.commandError("That's not how you use that command!: `!xp add #channel-to-add`", ctx.message.channel)
-        else:
-            channel_id = str(channel.id)
-            self.approvedChannels.append(channel_id)
-            try:
-                dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
-                await self.commandSuccess("Success!", f"Successfully added channel {channel.name} to banned list!", ctx.message.channel)
-            except:
-                await self.commandError("Error while saving channel to file!!", ctx.message.channel)
-
-    @xp.group()
-    async def remove(self, channel: discord.Channel = None):
-        if channel == None:
-            embed = discord.Embed(title="That's not how you use that command!",
-                                  description="!xp remove #channel-to-delete", color=discord.Color.red())
-            await self.bot.say(embed=embed)
-        else:
-            channel_id = str(channel.id)
-            if channel_id in self.approvedChannels:
-                self.approvedChannels.remove(channel_id)
-                try:
-                    dataIO.save_json("data/xp/allowed_channels.json", self.approvedChannels)
-                    embed = discord.Embed(
-                        title=f"Successfully removed channel {channel.name} from the banned list!",
-                        color=discord.Color.green())
-                    await self.bot.say(embed=embed)
-                except:
-                    embed = discord.Embed(title="Error while saving file!!",
-                                          color=discord.Color.red())
-                    await self.bot.say(embed=embed)
-            else:
-                embed = discord.Embed(title="Channel is not in the approved list!",
-                                      color=discord.Color.red())
-                await self.bot.say(embed=embed)
-
-    @xp.group(pass_context=True)
-    async def list(self, ctx):
-        embed = discord.Embed(title="List of channels users can NOT gain XP in.")
-        for channel in self.approvedChannels:
-            embed.add_field(name=f"{self.bot.get_channel(channel).name}", value=f"ID: {channel}", inline=False)
-        await self.bot.send_message(ctx.message.channel, embed=embed)
 
     @commands.has_role("Staff")
     @commands.command(pass_context=True)
@@ -137,11 +85,12 @@ class Submission:
         if await self.checkChannel(ctx):
             content = self.session.query(Content).all()
             with open("../backup.csv", "w") as f:
-                f.write("submission_id,message_id,user,date,link,score,comment\n")
+                f.write("submission_id,message_id,user,date,link,score,comment,xp_from_content,is_pride\n")
                 for row in content:
                     f.write(str(row.submission_id) + ',' + str(row.message_id)
                             + ',' + str(row.user) + ',' + str(row.datesubmitted) + ',' + str(row.link)
-                            + ',' + str(row.score) + ',' + str(row.comment) + "\n")
+                            + ',' + str(row.score) + ',' + str(row.comment) + ',' +
+                            str(row.xpfromcontent) + ',' + str(row.pride) + "\n")
             embed = discord.Embed(title="Backup Complete!", color=0x00ff00)
             await self.bot.send_message(ctx.message.channel, embed=embed)
             await self.bot.send_file(ctx.message.author, '../backup.csv')
@@ -150,7 +99,8 @@ class Submission:
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.content.startswith('!') == False:
+        if message.content.startswith('!') == False and message.channel.id not in self.bannedXPChannels:
+            # If this message is not a command and is not in the list of channels users CANNOT gain XP from chatting
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
                 xp = int(len(message.content.split())*0.5)
@@ -227,12 +177,12 @@ class Submission:
             logger.error('Multiple users found, something is really broken!')
         return db_user  # this value will be None or a valid user, make sure t
 
-    async def linkSubmit(self, message, userToUpdate, comment):
+    async def linkSubmit(self, message, userToUpdate, comment, pride=False):
         url_pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
         url = re.search(url_pattern, message.content.lower()).group(0)
         logger.debug('link submitting for ' + str(userToUpdate.name))
         logger.debug(str(userToUpdate.name) + "'s url - " + url[1])
-        await self.handleSubmit(message, userToUpdate, url, comment)
+        await self.handleSubmit(message, userToUpdate, url, comment, pride=pride)
 
     @commands.cooldown(1,90, commands.BucketType.server)
     @commands.has_role("Staff")
@@ -293,6 +243,25 @@ class Submission:
                     # normal submit.
                     comment = ctx.message.content[7:].lstrip(" ")
                     await self.normalSubmit(ctx.message, ctx.message.author, comment)
+                except:
+                    pass
+
+    @commands.command(pass_context=True)
+    async def pride(self, ctx):
+        if await self.checkChannel(ctx):
+            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
+                # do linksubmit
+                message = ctx.message.content[7:].lstrip(" ")
+                if message.startswith('https://') or message.startswith('http://'):
+                    comment = ""
+                else:
+                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
+                await self.linkSubmit(ctx.message, ctx.message.author, comment, pride=True)
+            else:
+                try:
+                    # normal submit.
+                    comment = ctx.message.content[7:].lstrip(" ")
+                    await self.normalSubmit(ctx.message, ctx.message.author, comment, pride=True)
                 except:
                     pass
 
@@ -395,6 +364,10 @@ class Submission:
                 stats_embed.add_field(name="Stats",
                                       value=f"    **Submits**: {stats['total_submissions']} | **Tokens**: {stats['coins']}",
                                       inline=False)
+                if stats['total_pride_submissions'] > 0:
+                    stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
+                                          value=f"    **Submits**: {stats['total_pride_submissions']}",
+                                          inline=False)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -501,9 +474,12 @@ class Submission:
         # add a new user if there's no registered user
         if (db_user == None):
             # create new user object
-            new_user = User(name=message.author.name, server_id=str(message.server.id), level=1, id=message.author.id, startdate=curdate, currency=0,
-                            streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0, totalsubmissions=0,
-                            currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True, xptime=(datetime.utcnow() - self.epoch).total_seconds())
+            new_user = User(name=message.author.name, server_id=str(message.server.id), level=1,
+                            id=message.author.id, startdate=curdate, currency=0,
+                            streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
+                            totalsubmissions=0, currentxp=0, adores=0, highscore=0, decaywarning=True,
+                            levelnotification=True,
+                            xptime=(datetime.utcnow() - self.epoch).total_seconds(), pridesubmitted=False)
             # add to session
             self.session.add(new_user)
             # # give relevant roles
@@ -573,10 +549,11 @@ class Submission:
     @commands.has_role("Giant")
     @commands.command(pass_context=True)
     async def kots(self, ctx):
-        with open(f'data/server/cursedhilda.png', 'rb') as f:
-            icon = f.read()
-        await self.bot.edit_server(ctx.message.server, icon=icon)
-        await self.bot.send_message(ctx.message.author, "Server icon updated ;)")
+        if await self.checkChannel(ctx):
+            with open(f'data/server/cursedhilda.png', 'rb') as f:
+                icon = f.read()
+            await self.bot.edit_server(ctx.message.server, icon=icon)
+            await self.bot.send_message(ctx.message.author, "Server icon updated ;)")
 
     @commands.has_role("Staff")
     @commands.command(pass_context=True)
@@ -709,64 +686,270 @@ class Submission:
                 await self.checkLevelRole(message, db_user.level)
 
     @commands.cooldown(1,30, commands.BucketType.channel)
-    @commands.command(pass_context=True)
-    async def help(self, ctx, command=None):
-        if command is None:
+    @commands.group(pass_context=True)
+    async def help(self, ctx):
+        if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
             embed = discord.Embed(title="Hildabot Help",
-                                  description='Here is a list of all of the commands you can use!',
+                                  description='Here is a list of all of the commands you can use! [Bot made by J\_C\_\_\_#8947]',
                                   color=0x90BDD4)
+            embed.add_field(name="!help [module title]",
+                            value="Use any of the module's title to see the help for just that section. (reduces spam)")
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
+            await self.bot.say(embed=embed)
             role_names = [role.name for role in ctx.message.author.roles]
             if 'Staff' in role_names:
-                embed.add_field(name="!delete [user]",
+                embed_admin = discord.Embed(title="Staff",
+                                            description="These commands require the Staff role to be used",
+                                            color=0x90BDD4)
+                embed_admin.add_field(name="!delete [user]",
                                 value="Removes a user from the database (Staff only! VERY DANGEROUS)",
                                 inline=False)
-                embed.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
+                embed_admin.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
                                 inline=False)
-                embed.add_field(name="!deletesubmissions [user]",
+                embed_admin.add_field(name="!deletesubmissions [user]",
                                 value="Removes a user's submissions from the database "
                                       "(Staff only! VERY DANGEROUS)",
                                 inline=False)
-                embed.add_field(name="!rollback [message id]",
+                embed_admin.add_field(name="!rollback [message id]",
                                 value="removes a submission from the DB and rolls back the xp "
                                       "gained from it. (Staff only!)",
                                 inline=False)
-            embed.add_field(name="!leaderboard",
+                embed_admin.add_field(name="!xp add #discord-channel",
+                                value="Adds a channel to the list of channels where users CANNOT "
+                                      "gain xp from chatting or use commands (Staff only!)",
+                                inline=False)
+                embed_admin.add_field(name="!xp remove #discord-channel",
+                                value="removes a submission from the DB and rolls back the xp "
+                                      "gained from it. (Staff only!)",
+                                inline=False)
+                embed_admin.add_field(name="!xp list",
+                                value="Lists the channels where users CANNOT gain XP or use commands"
+                                      "gained from it. (Staff only!)",
+                                inline=False)
+                self.bot.say(embed=embed_admin)
+            embed_xp = discord.Embed(title="XP",
+                                     description="All commands related to HildaCord's leveling system",
+                                     color=0x90BDD4)
+            embed_xp.add_field(name="!leaderboard",
                             value="Shows you the top 10 users in in the server.",
                             inline=False)
-            embed.add_field(name="!stats", value="To see your current scorecard", inline=False)
-            embed.add_field(name="!submit",
+            embed_xp.add_field(name="!stats", value="To see your current scorecard", inline=False)
+            embed_xp.add_field(name="!levelwarning [on | off]",
+                            value="To turn on or off the DM warning system about your leveling on the server."
+                                  "command !levelwarning on or !levelwarning off.",
+                            inline=False)
+            embed_xp.add_field(name="!streakwarning [on | off]",
+                            value="To turn on or off the PM warning system about your streak use the "
+                                  "command !levelwarning on or !levelwarning off.",
+                            inline=False)
+
+            embed_content = discord.Embed(title="Content",
+                                     description="All commands related to HildaBot's content curration features",
+                                     color=0x90BDD4)
+            embed_content.add_field(name="!submit",
                             value="To submit content, drag and drop the file (.png, .gif, .jpg) "
                                   "into discord and add '!submit' as a comment to it.",
                             inline=False)
-            embed.add_field(name="!submit [link]",
+            embed_content.add_field(name="!submit [link]",
                             value="If you'd like to submit via internet link, make sure you right click"
                                   " the image and select 'copy image location' and submit that URL using"
                                   " the !submit command.",
                             inline=False)
-            embed.add_field(name="!timeleft",
+            embed_content.add_field(name="!timeleft",
                             value="The !timeleft command will let you know how much longer you have "
                                   "left to submit for the day!",
                             inline=False)
-            embed.add_field(name="!randomidea",
+            embed_content.add_field(name="!randomidea",
                             value="Having trouble figuring out what to create?",
                             inline=False)
-            embed.add_field(name="!idea [idea]",
+            embed_content.add_field(name="!idea [idea]",
                             value="Add a random idea to the \"randomidea\" list!",
                             inline=False)
-            embed.add_field(name="!levelwarning [on | off]",
-                            value="To turn on or off the DM warning system about your leveling on the server."
-                                  "command !levelwarning on or !levelwarning off.",
-                            inline=False)
-            embed.add_field(name="!streakwarning [on | off]",
-                            value="To turn on or off the PM warning system about your streak use the "
-                                  "command !levelwarning on or !levelwarning off.",
-                            inline=False)
+            embed_events = discord.Embed(title="Events",
+                                     description="All commands related to HildaCord's current events",
+                                     color=0x90BDD4)
+            embed_events.add_field(name="!pride",
+                                    value="To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                          "into discord and add '!submit [comment (optional)]' as a comment to it.",
+                                    inline=False)
+            embed_events.add_field(name="!pride [link] [comment (optional)]",
+                                    value="If you'd like to submit via internet link, make sure you right click"
+                                          " the image and select 'copy image location' and submit that URL using"
+                                          " the !submit command.",
+                                    inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
-            await self.bot.say(embed=embed)
+            await self.bot.say(embed=embed_xp)
+            await self.bot.say(embed=embed_content)
+            await self.bot.say(embed=embed_events)
 
-    async def submitLinktoDB(self, user, link, message_id, comments):
+    @commands.has_role("Staff")
+    @help.command(name="staff", pass_context=True)
+    async def _staff(self, ctx):
+        embed_admin = discord.Embed(title="Staff",
+                                    description="These commands require the Staff role to be used",
+                                    color=0x90BDD4)
+        embed_admin.add_field(name="!delete [user]",
+                              value="Removes a user from the database (Staff only! VERY DANGEROUS)",
+                              inline=False)
+        embed_admin.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
+                              inline=False)
+        embed_admin.add_field(name="!deletesubmissions [user]",
+                              value="Removes a user's submissions from the database "
+                                    "(Staff only! VERY DANGEROUS)",
+                              inline=False)
+        embed_admin.add_field(name="!rollback [message id]",
+                              value="removes a submission from the DB and rolls back the xp "
+                                    "gained from it. (Staff only!)",
+                              inline=False)
+        embed_admin.add_field(name="!xp add #discord-channel",
+                              value="Adds a channel to the list of channels where users CANNOT "
+                                    "gain xp from chatting or use commands (Staff only!)",
+                              inline=False)
+        embed_admin.add_field(name="!xp remove #discord-channel",
+                              value="removes a submission from the DB and rolls back the xp "
+                                    "gained from it. (Staff only!)",
+                              inline=False)
+        embed_admin.add_field(name="!xp list",
+                              value="Lists the channels where users CANNOT gain XP or use commands"
+                                    "gained from it. (Staff only!)",
+                              inline=False)
+        self.bot.say(embed=embed_admin)
+
+    @help.command(name="xp", pass_context=True)
+    async def _xp(self, ctx):
+        embed_xp = discord.Embed(title="XP",
+                                 description="All commands related to HildaCord's leveling system",
+                                 color=0x90BDD4)
+        embed_xp.add_field(name="!leaderboard",
+                           value="Shows you the top 10 users in in the server.",
+                           inline=False)
+        embed_xp.add_field(name="!stats", value="To see your current scorecard", inline=False)
+        embed_xp.add_field(name="!levelwarning [on | off]",
+                           value="To turn on or off the DM warning system about your leveling on the server."
+                                 "command !levelwarning on or !levelwarning off.",
+                           inline=False)
+        embed_xp.add_field(name="!streakwarning [on | off]",
+                           value="To turn on or off the PM warning system about your streak use the "
+                                 "command !levelwarning on or !levelwarning off.",
+                           inline=False)
+        await self.bot.say(embed=embed_xp)
+
+    @help.command(name="content", pass_context=True)
+    async def _content(self, ctx):
+        embed_content = discord.Embed(title="Content",
+                                      description="All commands related to HildaBot's content curration features",
+                                      color=0x90BDD4)
+        embed_content.add_field(name="!submit",
+                                value="To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                      "into discord and add '!submit' as a comment to it.",
+                                inline=False)
+        embed_content.add_field(name="!submit [link]",
+                                value="If you'd like to submit via internet link, make sure you right click"
+                                      " the image and select 'copy image location' and submit that URL using"
+                                      " the !submit command.",
+                                inline=False)
+        embed_content.add_field(name="!timeleft",
+                                value="The !timeleft command will let you know how much longer you have "
+                                      "left to submit for the day!",
+                                inline=False)
+        embed_content.add_field(name="!randomidea",
+                                value="Having trouble figuring out what to create?",
+                                inline=False)
+        embed_content.add_field(name="!idea [idea]",
+                                value="Add a random idea to the \"randomidea\" list!",
+                                inline=False)
+        await self.bot.say(embed=embed_content)
+
+    @help.command(name="events", pass_context=True)
+    async def _events(self, ctx):
+        embed_events = discord.Embed(title="Events",
+                                     description="All commands related to HildaCord's current events",
+                                     color=0x90BDD4)
+        embed_events.add_field(name="!pride",
+                               value="To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                     "into discord and add '!submit [comment (optional)]' as a comment to it.",
+                               inline=False)
+        embed_events.add_field(name="!pride [link] [comment (optional)]",
+                               value="If you'd like to submit via internet link, make sure you right click"
+                                     " the image and select 'copy image location' and submit that URL using"
+                                     " the !submit command.",
+                               inline=False)
+        await self.bot.say(embed=embed_events)
+
+
+    @commands.has_role("Staff")
+    @commands.group(name="xp", pass_context=True)
+    async def xp(self, ctx):
+        if ctx.invoked_subcommand is None:
+            embed = discord.Embed(title="That's not how you use that command!",
+                                  color=discord.Color.red())
+            embed.add_field(name="!xp add [channel]",
+                            value="Adds a channel to the list of channels users can NOT gain xp from.")
+            embed.add_field(name="!xp remove [channel]",
+                            value="Removes a channel to the list of channels users can NOT gain xp from.")
+            embed.add_field(name="!xp list",
+                            value="Displays the list of channels users can NOT gain xp from.")
+            await self.bot.send_message(ctx.message.channel, embed=embed)
+
+    @xp.command(pass_context=True, name="add")
+    async def _add(self, ctx, channel: discord.Channel = None):
+        if channel == None:
+            await self.commandError(
+                "That's not how you use that command!: `!xp add #channel-to-add`",
+                ctx.message.channel)
+        else:
+            channel_id = str(channel.id)
+            if channel_id in self.bannedXPChannels:
+                await self.commandError("That channel is already in the banned list!",
+                                        ctx.message.channel)
+                return
+            self.bannedXPChannels.append(channel_id)
+            try:
+                dataIO.save_json("data/xp/banned_channels.json", self.bannedXPChannels)
+                await self.commandSuccess("Success!",
+                                          f"Successfully added channel {channel.name} to banned list! Users will no longer gain XP from chatting here!",
+                                          ctx.message.channel)
+            except:
+                await self.commandError("Error while saving channel to file!!",
+                                        ctx.message.channel)
+
+    @xp.command(name="remove")
+    async def _remove(self, channel: discord.Channel = None):
+        if channel == None:
+            embed = discord.Embed(title="That's not how you use that command!",
+                                  description="!xp remove #channel-to-delete",
+                                  color=discord.Color.red())
+            await self.bot.say(embed=embed)
+        else:
+            channel_id = str(channel.id)
+            if channel_id in self.bannedXPChannels:
+                self.bannedXPChannels.remove(channel_id)
+                try:
+                    dataIO.save_json("data/xp/banned_channels.json", self.bannedXPChannels)
+                    embed = discord.Embed(
+                        title=f"Successfully removed channel {channel.name} from the banned list!",
+                        color=discord.Color.green())
+                    await self.bot.say(embed=embed)
+                except:
+                    embed = discord.Embed(title="Error while saving file!!",
+                                          color=discord.Color.red())
+                    await self.bot.say(embed=embed)
+            else:
+                embed = discord.Embed(title="Channel is not in the list!",
+                                      color=discord.Color.red())
+                await self.bot.say(embed=embed)
+
+    @xp.command(pass_context=True, name='list')
+    async def _list(self, ctx):
+        embed = discord.Embed(title="List of channels users can NOT gain XP in.")
+        for channel in self.bannedXPChannels:
+            embed.add_field(name=f"{self.bot.get_channel(channel).name}",
+                            value=f"ID: {channel}",
+                            inline=False)
+        await self.bot.send_message(ctx.message.channel, embed=embed)
+
+    async def submitLinktoDB(self, user, link, message_id, comments, xp_gained, pride: bool = False):
         try:
             new_content = Content()
             new_content.user = user
@@ -775,13 +958,16 @@ class Submission:
             new_content.score = 0
             new_content.message_id = message_id
             new_content.comment = comments
+            new_content.xpfromcontent = xp_gained
+            if pride:
+                new_content.pride = True
             self.session.add(new_content)
             self.session.commit()
             logger.success("added content to db")
         except Exception as e:
             logger.error(e)
 
-    async def normalSubmit(self, message, userToUpdate, comment):
+    async def normalSubmit(self, message, userToUpdate, comment, pride: bool = False):
         """
 
         :param message: discord message object
@@ -794,9 +980,12 @@ class Submission:
         jsondict = json.loads(jsonstr)
         url = jsondict['url']
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        await self.handleSubmit(message, userToUpdate, url, comment)
+        if pride:
+            await self.handleSubmit(message, userToUpdate, url, comment, pride)
+        else:
+            await self.handleSubmit(message, userToUpdate, url, comment)
 
-    async def handleSubmit(self, message, userToUpdate, url, comment):
+    async def handleSubmit(self, message, userToUpdate, url, comment, pride=False):
         """
 
         :param message: discord message object
@@ -822,10 +1011,14 @@ class Submission:
         else:
             # db_user is our member object
             # check if already submitted
-            if db_user.submitted == 1:
+            if db_user.submitted == 1 and pride == False:
                 logger.error(str(userToUpdate.name) + ' already submitted')
                 await self.bot.send_message(message.channel,
                                           "```diff\n- You seem to have submitted something today already!\n```")
+            elif db_user.pridesubmitted == 1 and pride == True:
+                logger.error(str(userToUpdate.name) + ' already submitted [pride event]')
+                await self.bot.send_message(message.channel,
+                                            "```diff\n- You seem to have already submitted something for the Pride event today!\n```")
             # otherwise, do the submit
             else:
                 # update all the stats
@@ -860,11 +1053,14 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                db_user.submitted = int(self.auth.get('discord', 'LIVE'))
+                if pride:
+                    db_user.pridesubmitted = int(self.auth.get('discord', 'LIVE'))
+                else:
+                    db_user.submitted = int(self.auth.get('discord', 'LIVE'))
                 db_user.expiry = potentialstreak
                 # and push all cells to the database
                 self.session.commit()
-                await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id), comments=comment)
+                await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id), comments=comment, xp_gained=xp_gained, pride=pride)
                 logger.success("finishing updating " + db_user.name + "'s stats")
                 await self.updateRole(db_user.level, message)
                 await self.bot.send_message(message.channel,
@@ -1111,6 +1307,7 @@ class Submission:
     async def getUserStats(self, db_user):
         stats = {"user_name": db_user.name,
                  "total_submissions": db_user.totalsubmissions,
+                 "total_pride_submissions": self.session.query(Content).filter(and_(Content.user == db_user.name, Content.pride == True)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
@@ -1187,14 +1384,21 @@ class Submission:
             await self.commandError(channel=ctx.message.channel, message='You provided too many arguments for that command! Please read the !help for that command.')
             raise error  # re-raise the error so all the errors will still show up in console
         else:
-            raise error
+            logger.error(error)
 
     async def checkChannel(self, ctx):
+        """
+        Channels where users are permitted to use commands
+        :param ctx:
+        :return:
+        """
         if ctx.message.channel.id in self.approvedChannels:
             return True
         else:
-            await self.commandError(channel=ctx.message.channel,
-                                    message='Cannot respond within this channel')
+            message = await self.commandError(channel=ctx.message.channel,
+                                    message='Cannot respond within this channel. Please see #rules for info on where you can use commands!')
+            await asyncio.sleep(3)
+            await self.bot.delete_message(message)
             return False
         # return True
 
@@ -1242,14 +1446,19 @@ class Submission:
 
 def check_folders():
     if not os.path.exists("data/xp"):
-        print("Creating data/xp folder...")
+        logger.info("Creating data/xp folder...")
         os.makedirs("data/xp")
-
+    if not os.path.exists("data/xp"):
+        logger.info("Creating data/server folder...")
+        os.makedirs("data/server")
 
 def check_files():
-    if not dataIO.is_valid_json("data/xp/allowed_channels.json"):
+    if not dataIO.is_valid_json("data/server/allowed_channels.json"):
         logger.debug("Creating empty allowed_channels.json...")
-        dataIO.save_json("data/xp/allowed_channels.json", [])
+        dataIO.save_json("data/server/allowed_channels.json", [])
+    if not dataIO.is_valid_json("data/xp/banned_channels.json"):
+        logger.debug("Creating empty banned_channels.json...")
+        dataIO.save_json("data/xp/banned_channels.json", [])
 
 def setup(bot):
     check_folders()

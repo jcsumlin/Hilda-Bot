@@ -19,6 +19,7 @@ class User(Base):
     streak = Column(Integer, nullable=False)
     expiry = Column(Date, nullable=False)
     submitted = Column(Boolean, nullable=False)
+    pridesubmitted = Column(Boolean, nullable=False)
     raffle = Column(Boolean, nullable=False)
     promptsadded = Column(Integer, nullable=False)
     totalsubmissions = Column(Integer, nullable=False)
@@ -38,6 +39,8 @@ class Content(Base):
     link = Column(String, nullable=False)
     score = Column(Integer, default=0, nullable=False)
     comment = Column(String, nullable=False, default="")
+    xpfromcontent = Column(Integer, nullable=False)
+    pride = Column(Boolean, default=False)
     
 
  
