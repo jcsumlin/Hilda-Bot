@@ -591,7 +591,6 @@ class Submission:
             await self.bot.add_reaction(msg, u"\U0001F44D")
             await self.bot.add_reaction(msg, u"\U0001F44E")
             res = await self.bot.wait_for_reaction([u"\U0001F44D", u"\U0001F44E"], user=ctx.message.author, message=msg, timeout=15)
-            logger.info(res.reaction.emoji)
             if res.reaction.emoji == u"\U0001F44D":
                 db_user = await self.getDBUser(user.id)
                 if db_user != None:
@@ -700,8 +699,9 @@ class Submission:
             embed.add_field(name="!help [module title]",
                             value="Use any of the module's title to see the help for just that section. (reduces spam)")
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
-            await self.bot.send_message(ctx.message.author, embed=embed)
+
             role_names = [role.name for role in ctx.message.author.roles]
+            staff = False
             if 'Staff' in role_names:
                 embed_admin = discord.Embed(title="Staff",
                                             description="These commands require the Staff role to be used",
@@ -742,7 +742,8 @@ class Submission:
                                 value="Lists the channels where users CANNOT gain XP or use commands"
                                       "gained from it. (Staff only!)",
                                 inline=False)
-                self.bot.send_message(ctx.message.author, embed=embed_admin)
+                staff = True
+
             embed_xp = discord.Embed(title="XP",
                                      description="All commands related to HildaCord's leveling system",
                                      color=0x90BDD4)
@@ -795,9 +796,17 @@ class Submission:
                                     inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
-            await self.bot.send_message(ctx.message.author, embed=embed_xp)
-            await self.bot.send_message(ctx.message.author, embed=embed_content)
-            await self.bot.send_message(ctx.message.author, embed=embed_events)
+            try:
+                await self.bot.send_message(ctx.message.author, embed=embed)
+                if staff:
+                    self.bot.send_message(ctx.message.author, embed=embed_admin)
+                await self.bot.send_message(ctx.message.author, embed=embed_xp)
+                await self.bot.send_message(ctx.message.author, embed=embed_content)
+                await self.bot.send_message(ctx.message.author, embed=embed_events)
+            except discord.Forbidden:
+                message = await self.commandError("Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)", ctx.message.channel)
+                await asyncio.sleep(5)
+                await self.bot.delete_message(message)
 
     @commands.has_role("Staff")
     @help.command(name="staff", pass_context=True)
@@ -830,7 +839,14 @@ class Submission:
                               value="Lists the channels where users CANNOT gain XP or use commands"
                                     "gained from it. (Staff only!)",
                               inline=False)
-        self.bot.send_message(ctx.message.author, embed=embed_admin)
+        try:
+            self.bot.send_message(ctx.message.author, embed=embed_admin)
+        except discord.Forbidden:
+            message = await self.commandError(
+                "Error sending !help staff in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+                ctx.message.channel)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(message)
 
     @help.command(name="xp", pass_context=True)
     async def _xp(self, ctx):
@@ -849,7 +865,14 @@ class Submission:
                            value="To turn on or off the PM warning system about your streak use the "
                                  "command !levelwarning on or !levelwarning off.",
                            inline=False)
-        await self.bot.send_message(ctx.message.author, embed=embed_xp)
+        try:
+            await self.bot.send_message(ctx.message.author, embed=embed_xp)
+        except discord.Forbidden:
+            message = await self.commandError(
+                "Error sending !help xp in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+                ctx.message.channel)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(message)
 
     @help.command(name="content", pass_context=True)
     async def _content(self, ctx):
@@ -875,7 +898,14 @@ class Submission:
         embed_content.add_field(name="!idea [idea]",
                                 value="Add a random idea to the \"randomidea\" list!",
                                 inline=False)
-        await self.bot.send_message(ctx.message.author, embed=embed_content)
+        try:
+            await self.bot.send_message(ctx.message.author, embed=embed_content)
+        except discord.Forbidden:
+            message = await self.commandError(
+                "Error sending !help content in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+                ctx.message.channel)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(message)
 
     @help.command(name="events", pass_context=True)
     async def _events(self, ctx):
@@ -891,7 +921,14 @@ class Submission:
                                      " the image and select 'copy image location' and submit that URL using"
                                      " the !pride command.",
                                inline=False)
-        await self.bot.send_message(ctx.message.author, embed=embed_events)
+        try:
+            await self.bot.send_message(ctx.message.author, embed=embed_events)
+        except discord.Forbidden:
+            message = await self.commandError(
+                "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+                ctx.message.channel)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(message)
 
 
     @commands.has_role("Staff")
@@ -1402,8 +1439,6 @@ class Submission:
         if isinstance(error, commands.TooManyArguments):
             await self.commandError(channel=ctx.message.channel, message='You provided too many arguments for that command! Please read the !help for that command.')
             raise error  # re-raise the error so all the errors will still show up in console
-        else:
-            logger.error(error)
 
     async def checkChannel(self, ctx):
         """
