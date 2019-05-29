@@ -691,7 +691,6 @@ class Submission:
             else:
                 await self.checkLevelRole(message, db_user.level)
 
-    @commands.cooldown(1,30, commands.BucketType.channel)
     @commands.group(pass_context=True)
     async def help(self, ctx):
         if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
@@ -701,7 +700,7 @@ class Submission:
             embed.add_field(name="!help [module title]",
                             value="Use any of the module's title to see the help for just that section. (reduces spam)")
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
-            await self.bot.say(embed=embed)
+            await self.bot.send_message(ctx.message.author, embed=embed)
             role_names = [role.name for role in ctx.message.author.roles]
             if 'Staff' in role_names:
                 embed_admin = discord.Embed(title="Staff",
@@ -743,7 +742,7 @@ class Submission:
                                 value="Lists the channels where users CANNOT gain XP or use commands"
                                       "gained from it. (Staff only!)",
                                 inline=False)
-                self.bot.say(embed=embed_admin)
+                self.bot.send_message(ctx.message.author, embed=embed_admin)
             embed_xp = discord.Embed(title="XP",
                                      description="All commands related to HildaCord's leveling system",
                                      color=0x90BDD4)
@@ -787,18 +786,18 @@ class Submission:
                                      color=0x90BDD4)
             embed_events.add_field(name="!pride",
                                     value="To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                          "into discord and add '!submit [comment (optional)]' as a comment to it.",
+                                          "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                     inline=False)
             embed_events.add_field(name="!pride [link] [comment (optional)]",
                                     value="If you'd like to submit via internet link, make sure you right click"
                                           " the image and select 'copy image location' and submit that URL using"
-                                          " the !submit command.",
+                                          " the !pride command.",
                                     inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
-            await self.bot.say(embed=embed_xp)
-            await self.bot.say(embed=embed_content)
-            await self.bot.say(embed=embed_events)
+            await self.bot.send_message(ctx.message.author, embed=embed_xp)
+            await self.bot.send_message(ctx.message.author, embed=embed_content)
+            await self.bot.send_message(ctx.message.author, embed=embed_events)
 
     @commands.has_role("Staff")
     @help.command(name="staff", pass_context=True)
@@ -831,7 +830,7 @@ class Submission:
                               value="Lists the channels where users CANNOT gain XP or use commands"
                                     "gained from it. (Staff only!)",
                               inline=False)
-        self.bot.say(embed=embed_admin)
+        self.bot.send_message(ctx.message.author, embed=embed_admin)
 
     @help.command(name="xp", pass_context=True)
     async def _xp(self, ctx):
@@ -850,7 +849,7 @@ class Submission:
                            value="To turn on or off the PM warning system about your streak use the "
                                  "command !levelwarning on or !levelwarning off.",
                            inline=False)
-        await self.bot.say(embed=embed_xp)
+        await self.bot.send_message(ctx.message.author, embed=embed_xp)
 
     @help.command(name="content", pass_context=True)
     async def _content(self, ctx):
@@ -876,7 +875,7 @@ class Submission:
         embed_content.add_field(name="!idea [idea]",
                                 value="Add a random idea to the \"randomidea\" list!",
                                 inline=False)
-        await self.bot.say(embed=embed_content)
+        await self.bot.send_message(ctx.message.author, embed=embed_content)
 
     @help.command(name="events", pass_context=True)
     async def _events(self, ctx):
@@ -885,14 +884,14 @@ class Submission:
                                      color=0x90BDD4)
         embed_events.add_field(name="!pride",
                                value="To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!submit [comment (optional)]' as a comment to it.",
+                                     "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                inline=False)
         embed_events.add_field(name="!pride [link] [comment (optional)]",
                                value="If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
-                                     " the !submit command.",
+                                     " the !pride command.",
                                inline=False)
-        await self.bot.say(embed=embed_events)
+        await self.bot.send_message(ctx.message.author, embed=embed_events)
 
 
     @commands.has_role("Staff")
