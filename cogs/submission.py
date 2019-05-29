@@ -368,6 +368,12 @@ class Submission:
                     stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
                                           value=f"    **Submits**: {stats['total_pride_submissions']}",
                                           inline=False)
+                    if db_user.pridesubmitted == True:
+                        submit_status = ":white_check_mark: You have submitted today"
+                    else:
+                        submit_status = ":regional_indicator_x: You have not submitted today."
+                    # score_card = name_card + xp_card + adores_card + stats_card
+                    stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -719,10 +725,21 @@ class Submission:
                                       "gain xp from chatting or use commands (Staff only!)",
                                 inline=False)
                 embed_admin.add_field(name="!xp remove #discord-channel",
-                                value="removes a submission from the DB and rolls back the xp "
-                                      "gained from it. (Staff only!)",
+                                value="Removes channel from banned XP channels (Staff only!)",
                                 inline=False)
                 embed_admin.add_field(name="!xp list",
+                                value="Lists the channels where users CANNOT gain XP or use commands"
+                                      "gained from it. (Staff only!)",
+                                inline=False)
+                embed_admin.add_field(name="!response add #discord-channel",
+                                value="Adds a channel to the list of channels where users can "
+                                      "use bot commands(Staff only!)",
+                                inline=False)
+                embed_admin.add_field(name="!response remove #discord-channel",
+                                value="Removes a submission from the DB and rolls back the xp "
+                                      "gained from it. (Staff only!)",
+                                inline=False)
+                embed_admin.add_field(name="!response list",
                                 value="Lists the channels where users CANNOT gain XP or use commands"
                                       "gained from it. (Staff only!)",
                                 inline=False)
@@ -1078,6 +1095,9 @@ class Submission:
         # reset all member's submitted status
         stmt = update(User).values(submitted=False)
         self.session.execute(stmt)
+        stmt1 = update(User).values(pridesubmitted=False)
+        self.session.execute(stmt1)
+
         self.session.commit()
 
         for curr_member in members:
