@@ -1,5 +1,6 @@
 Discord Art Sumbission Bot!
 =============
+<a href="https://patreon.com/boiboi"><img src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.herokuapp.com%2Fbotboi&style=for-the-badge" /> </a>
 
 ## Spinning up your own instance
 1. First clone the repository
