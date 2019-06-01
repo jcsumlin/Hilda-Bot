@@ -249,7 +249,7 @@ class Submission:
 
     @commands.command(pass_context=True)
     async def pride(self, ctx):
-        if await self.checkChannel(ctx):
+        if ctx.message.channel.id == "582403296686374932":
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[7:].lstrip(" ")
@@ -265,6 +265,8 @@ class Submission:
                     await self.normalSubmit(ctx.message, ctx.message.author, comment, pride=True)
                 except:
                     pass
+        else:
+            await self.commandError("Please go to #pride-2019 to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
