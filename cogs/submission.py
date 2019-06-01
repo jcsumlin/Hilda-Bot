@@ -789,11 +789,13 @@ class Submission:
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
             embed_events.add_field(name="!pride",
-                                    value="To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                    value="Please go to #pride-2019 to use this command. To submit "
+                                          "content, drag and drop the file (.png, .gif, .jpg) "
                                           "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                     inline=False)
             embed_events.add_field(name="!pride [link] [comment (optional)]",
-                                    value="If you'd like to submit via internet link, make sure you right click"
+                                    value="Please go to #pride-2019 to use this command. "
+                                          "If you'd like to submit via internet link, make sure you right click"
                                           " the image and select 'copy image location' and submit that URL using"
                                           " the !pride command.",
                                     inline=False)
@@ -916,11 +918,11 @@ class Submission:
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
         embed_events.add_field(name="!pride",
-                               value="To submit content, drag and drop the file (.png, .gif, .jpg) "
+                               value="Please go to #pride-2019 to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
                                      "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                inline=False)
         embed_events.add_field(name="!pride [link] [comment (optional)]",
-                               value="If you'd like to submit via internet link, make sure you right click"
+                               value="Please go to #pride-2019 to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
                                      " the !pride command.",
                                inline=False)
