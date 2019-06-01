@@ -204,7 +204,8 @@ class Submission:
                                     id=mee6_user['id'], startdate=curdate, currency=0,
                                     streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
                                     totalsubmissions=0,
-                                    currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True)
+                                    currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True,
+                                    xptime=(datetime.utcnow() - self.epoch).total_seconds(),  pridesubmitted=False)
                     self.session.add(new_user)
                     self.session.commit()
                     users_updated += 1
