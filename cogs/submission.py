@@ -1456,7 +1456,7 @@ class Submission:
             return True
         else:
             message = await self.commandError(channel=ctx.message.channel,
-                                    message='Cannot respond within this channel. Please see #rules for info on where you can use commands!')
+                                    message='Cannot respond within this channel. Please see #welcome for info on where you can use commands!')
             await asyncio.sleep(3)
             await self.bot.delete_message(message)
             return False
