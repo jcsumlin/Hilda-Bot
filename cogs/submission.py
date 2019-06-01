@@ -1446,6 +1446,7 @@ class Submission:
         :param ctx:
         :return:
         """
+        self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         if ctx.message.channel.id in self.approvedChannels:
             return True
         else:
