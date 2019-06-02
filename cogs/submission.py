@@ -117,7 +117,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 #<:HildaNice:554394104117723136>
-                if reaction.emoji.id == '554394104117723136' and reaction.message.content.startswith("!submit"):
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -141,7 +141,7 @@ class Submission:
             # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
-                if reaction.emoji.id == '554394104117723136' and reaction.message.content.startswith("!submit"):
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     logger.debug("reaction removed " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
