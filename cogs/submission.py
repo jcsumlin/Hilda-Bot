@@ -372,9 +372,9 @@ class Submission:
                                           value=f"    **Submits**: {stats['total_pride_submissions']}",
                                           inline=False)
                     if db_user.pridesubmitted == True:
-                        submit_status = ":white_check_mark: You have submitted today"
+                        submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
                     else:
-                        submit_status = ":regional_indicator_x: You have not submitted today."
+                        submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
                     stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
@@ -402,9 +402,9 @@ class Submission:
                 # stats_embed.add_field(name="Adores", value="{0}".format(adores))
 
                 if submitted_today == 'yes':
-                    submit_status = ":white_check_mark: You have submitted today"
+                    submit_status = f":white_check_mark: {'You' if user == None else 'They'} You have submitted today"
                 else:
-                    submit_status = ":regional_indicator_x: You have not submitted today."
+                    submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                 # score_card = name_card + xp_card + adores_card + stats_card
                 stats_embed.add_field(name="Submit Status", value=submit_status, inline=True)
                 stats_embed.set_footer(text="Streaks Expires: {0} Days, {1} Hours, {2} Minutes, {3} Seconds.".format(
@@ -453,22 +453,22 @@ class Submission:
                 db_user.promptsadded = newpromptscore = db_user.promptsadded + 1
                 self.session.commit()
                 await self.bot.send_message(ctx.message.channel, "```diff\n+ Your prompt suggestion has been recorded!\n```")
-                if newpromptscore == 20:
-                    for rank in serv.roles:
-                        if rank.name == "Idea Machine":
-                            await self.bot.add_roles(ctx.message.author, rank)
-                            await self.bot.send_message(ctx.message.channel,
-                                                      "```Python\n @{0} Achievement Unlocked: Idea Machine\n```".format(
-                                                          ctx.message.author.name))
-                        else:
-                            try:
-                                role = self.bot.create_role(name="Idea Machine")
-                                logger.success("Role created: Idea Machine")
-                                await self.bot.add_roles(ctx.message.author, rank)
-                            except Exception:
-                                logger.error("Could not create role: Idea Machine")
-                                await self.bot.send_message(ctx.message.channel,
-                                                            "```diff\n- Could not create role: Idea Machine. Please check bot permissions.\n```")
+                # if newpromptscore == 20:
+                #     for rank in serv.roles:
+                #         if rank.name == "Idea Machine":
+                #             await self.bot.add_roles(ctx.message.author, rank)
+                #             await self.bot.send_message(ctx.message.channel,
+                #                                       "```Python\n @{0} Achievement Unlocked: Idea Machine\n```".format(
+                #                                           ctx.message.author.name))
+                #         else:
+                #             try:
+                #                 role = self.bot.create_role(name="Idea Machine")
+                #                 logger.success("Role created: Idea Machine")
+                #                 await self.bot.add_roles(ctx.message.author, rank)
+                #             except Exception:
+                #                 logger.error("Could not create role: Idea Machine")
+                #                 await self.bot.send_message(ctx.message.channel,
+                #                                             "```diff\n- Could not create role: Idea Machine. Please check bot permissions.\n```")
 
                 with open('../prompts.txt', 'a+') as fp:
                     fp.write(ctx.message.content[6:] + '\n')
@@ -695,58 +695,59 @@ class Submission:
 
     @commands.group(pass_context=True)
     async def help(self, ctx):
-        if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
+        if (ctx.message.channel.is_private or await self.checkChannel(ctx)) and ctx.invoked_subcommand is None:
             embed = discord.Embed(title="Hildabot Help",
                                   description='Here is a list of all of the commands you can use! [Bot made by J\_C\_\_\_#8947]',
                                   color=0x90BDD4)
             embed.add_field(name="!help [module title]",
                             value="Use any of the module's title to see the help for just that section. (reduces spam)")
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
-
-            role_names = [role.name for role in ctx.message.author.roles]
             staff = False
-            if 'Staff' in role_names:
-                embed_admin = discord.Embed(title="Staff",
-                                            description="These commands require the Staff role to be used",
-                                            color=0x90BDD4)
-                embed_admin.add_field(name="!delete [user]",
-                                value="Removes a user from the database (Staff only! VERY DANGEROUS)",
-                                inline=False)
-                embed_admin.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!deletesubmissions [user]",
-                                value="Removes a user's submissions from the database "
-                                      "(Staff only! VERY DANGEROUS)",
-                                inline=False)
-                embed_admin.add_field(name="!rollback [message id]",
-                                value="removes a submission from the DB and rolls back the xp "
-                                      "gained from it. (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!xp add #discord-channel",
-                                value="Adds a channel to the list of channels where users CANNOT "
-                                      "gain xp from chatting or use commands (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!xp remove #discord-channel",
-                                value="Removes channel from banned XP channels (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!xp list",
-                                value="Lists the channels where users CANNOT gain XP or use commands"
-                                      "gained from it. (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!response add #discord-channel",
-                                value="Adds a channel to the list of channels where users can "
-                                      "use bot commands(Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!response remove #discord-channel",
-                                value="Removes a submission from the DB and rolls back the xp "
-                                      "gained from it. (Staff only!)",
-                                inline=False)
-                embed_admin.add_field(name="!response list",
-                                value="Lists the channels where users CANNOT gain XP or use commands"
-                                      "gained from it. (Staff only!)",
-                                inline=False)
+            if not ctx.message.channel.is_private:
+                role_names = [role.name for role in ctx.message.author.roles]
+                if 'Staff' in role_names:
+                    staff = True
+            if ctx.message.channel.is_private:
                 staff = True
-
+            embed_admin = discord.Embed(title="Staff",
+                                        description="These commands require the Staff role to be used",
+                                        color=0x90BDD4)
+            embed_admin.add_field(name="!delete [user]",
+                                  value="Removes a user from the database (Staff only! VERY DANGEROUS)",
+                                  inline=False)
+            embed_admin.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!deletesubmissions [user]",
+                                  value="Removes a user's submissions from the database "
+                                        "(Staff only! VERY DANGEROUS)",
+                                  inline=False)
+            embed_admin.add_field(name="!rollback [message id]",
+                                  value="removes a submission from the DB and rolls back the xp "
+                                        "gained from it. (Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!xp add #discord-channel",
+                                  value="Adds a channel to the list of channels where users CANNOT "
+                                        "gain xp from chatting or use commands (Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!xp remove #discord-channel",
+                                  value="Removes channel from banned XP channels (Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!xp list",
+                                  value="Lists the channels where users CANNOT gain XP or use commands"
+                                        "gained from it. (Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!response add #discord-channel",
+                                  value="Adds a channel to the list of channels where users can "
+                                        "use bot commands(Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!response remove #discord-channel",
+                                  value="Removes a channel to the list of channels where users can "
+                                        "use bot commands(Staff only!)",
+                                  inline=False)
+            embed_admin.add_field(name="!response list",
+                                  value="Lists the channels where users CANNOT gain XP or use commands"
+                                        "gained from it. (Staff only!)",
+                                  inline=False)
             embed_xp = discord.Embed(title="XP",
                                      description="All commands related to HildaCord's leveling system",
                                      color=0x90BDD4)
@@ -804,7 +805,7 @@ class Submission:
             try:
                 await self.bot.send_message(ctx.message.author, embed=embed)
                 if staff:
-                    self.bot.send_message(ctx.message.author, embed=embed_admin)
+                    await self.bot.send_message(ctx.message.author, embed=embed_admin)
                 await self.bot.send_message(ctx.message.author, embed=embed_xp)
                 await self.bot.send_message(ctx.message.author, embed=embed_content)
                 await self.bot.send_message(ctx.message.author, embed=embed_events)
@@ -845,7 +846,7 @@ class Submission:
                                     "gained from it. (Staff only!)",
                               inline=False)
         try:
-            self.bot.send_message(ctx.message.author, embed=embed_admin)
+            await self.bot.send_message(ctx.message.author, embed=embed_admin)
         except discord.Forbidden:
             message = await self.commandError(
                 "Error sending !help staff in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
@@ -1477,7 +1478,7 @@ class Submission:
                     await self.bot.remove_roles(message.author, role)
                     logger.info(f"Removed {role.name} from {message.author.name}")
                 except:
-                    logger.error(f"Error removing {role.name    }")
+                    logger.error(f"Error removing {role.name}")
 
     async def removeHigherRoles(self, message: discord.Message, higher_roles):
         """
@@ -1495,6 +1496,7 @@ class Submission:
             if role in message.author.roles:
                 try:
                     await self.bot.remove_roles(message.author, role)
+                    logger.debug(f"Role removed from {message.author}: {role.name}")
                     _removed += 1
                 except:
                     logger.error(f"Couldn't remove role from user: {role.name}")
