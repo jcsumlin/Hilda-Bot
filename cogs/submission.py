@@ -402,7 +402,7 @@ class Submission:
                 # stats_embed.add_field(name="Adores", value="{0}".format(adores))
 
                 if submitted_today == 'yes':
-                    submit_status = f":white_check_mark: {'You' if user == None else 'They'} You have submitted today"
+                    submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
                 else:
                     submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                 # score_card = name_card + xp_card + adores_card + stats_card
