@@ -428,11 +428,11 @@ class Submission:
             jobs = self.scheduler.get_jobs()
             if difference_hours < 5:
                 await self.bot.send_message(ctx.message.channel,
-                                          '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n- Resets at 23:00 EST```'.format(
+                                          '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
                                               difference_hours, difference_minutes, seconds_to_work))
             else:
                 await self.bot.send_message(ctx.message.channel,
-                                          '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n- Resets at 23:00 EST```'.format(
+                                          '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
                                               difference_hours, difference_minutes, seconds_to_work))
 
     @commands.command(pass_context=True)
