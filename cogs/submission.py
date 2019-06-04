@@ -418,7 +418,7 @@ class Submission:
     async def timeleft(self, ctx):
         if await self.checkChannel(ctx):
             now = datetime.utcnow()
-            end = datetime(now.year, now.month, now.day, hour=4, minute=0, second=0, microsecond=0)
+            end = datetime(now.year, now.month, now.day, hour=3, minute=0, second=0, microsecond=0)
             difference = end - now
             seconds_to_work = difference.seconds
             difference_hours = math.floor(seconds_to_work / 3600)
