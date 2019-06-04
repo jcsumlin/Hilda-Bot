@@ -19,7 +19,6 @@ from bs4 import BeautifulSoup
 from discord.ext import commands
 from loguru import logger
 # scheduling stuff
-from pytz import utc
 from sqlalchemy import create_engine, and_
 from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
@@ -39,10 +38,10 @@ class Submission:
         Base.metadata.bind = engine
         DBSession = sessionmaker(bind=engine)
         self.session = DBSession()  # session.commit() to store data, and session.rollback() to discard changes
-        scheduler = AsyncIOScheduler(timezone=utc)
-        scheduler.add_job(self.housekeeper, 'interval', days=1, replace_existing=True, coalesce=True,)
-        scheduler.add_job(self.setGame, 'interval', seconds=10, replace_existing=True, coalesce=True,)
-        scheduler.start()
+        self.scheduler = AsyncIOScheduler(timezone='America/New_York')
+        self.scheduler.add_job(self.housekeeper, trigger='cron', hour=23, replace_existing=True, coalesce=True,)
+        self.scheduler.add_job(self.setGame, 'interval', seconds=10, replace_existing=True, coalesce=True,)
+        self.scheduler.start()
         self.auth = configparser.ConfigParser()
         self.auth.read('../auth.ini')
         self.mee6leaderboardUrl = "https://mee6.xyz/api/plugins/levels/leaderboard/492572315138392064?limit=999"
@@ -117,7 +116,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 #<:HildaNice:554394104117723136>
-                if reaction.emoji.id == '584592282175668254' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -419,21 +418,21 @@ class Submission:
     async def timeleft(self, ctx):
         if await self.checkChannel(ctx):
             now = datetime.utcnow()
-            # CST Time Zone
-            end = datetime(now.year, now.month, now.day, hour=6, minute=0, second=0, microsecond=0)
+            end = datetime(now.year, now.month, now.day, hour=4, minute=0, second=0, microsecond=0)
             difference = end - now
             seconds_to_work = difference.seconds
             difference_hours = math.floor(seconds_to_work / 3600)
             seconds_to_work = seconds_to_work - 3600 * difference_hours
             difference_minutes = math.floor(seconds_to_work / 60)
             seconds_to_work = seconds_to_work - 60 * difference_minutes
+            jobs = self.scheduler.get_jobs()
             if difference_hours < 5:
                 await self.bot.send_message(ctx.message.channel,
-                                          '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n```'.format(
+                                          '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n- Resets at 23:00 EST```'.format(
                                               difference_hours, difference_minutes, seconds_to_work))
             else:
                 await self.bot.send_message(ctx.message.channel,
-                                          '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n```'.format(
+                                          '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n- Resets at 23:00 EST```'.format(
                                               difference_hours, difference_minutes, seconds_to_work))
 
     @commands.command(pass_context=True)
