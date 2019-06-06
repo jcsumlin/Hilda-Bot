@@ -1,5 +1,6 @@
 import os
 
+from loguru import logger
 from sqlalchemy import Column, Integer, String, Date, Boolean, Float
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -51,6 +52,12 @@ engine = create_engine('sqlite:///database.db')
 # Create all tables in the engine. This is equivalent to "Create Table"
 # statements in raw SQL.
 Base.metadata.create_all(bind=engine)
+logger.success("Database file 'database.db' has been created")
 # moves database to correct folder for bot to function
 if __name__ == '__main__':
-    os.rename('./database.db', './cogs/database.db')
+    try:
+        os.rename('./database.db', './cogs/database.db')
+        logger.success("database.db has been moved into the cogs folder")
+    except Exception as e:
+        logger.error("Unable to move database, please ensure that you have proper permissions "
+                     f"for this folder and its files. Error {e}")

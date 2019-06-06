@@ -1471,16 +1471,17 @@ class Submission:
         :param ctx:
         :return:
         """
-        logger.info(f"Removing all roles for {message.author.name}")
-        level_roles = [y[1] for y in self.auth.items("level-roles")]
-        for role_name in level_roles:
-            role = discord.utils.get(message.server.roles, name=role_name)
-            if role in message.author.roles:
-                try:
-                    await self.bot.remove_roles(message.author, role)
-                    logger.info(f"Removed {role.name} from {message.author.name}")
-                except:
-                    logger.error(f"Error removing {role.name}")
+        # logger.info(f"Removing all roles for {message.author.name}")
+        # level_roles = [y[1] for y in self.auth.items("level-roles")]
+        # for role_name in level_roles:
+        #     role = discord.utils.get(message.server.roles, name=role_name)
+        #     if role in message.author.roles:
+        #         try:
+        #             await self.bot.remove_roles(message.author, role)
+        #             logger.info(f"Removed {role.name} from {message.author.name}")
+        #         except:
+        #             logger.error(f"Error removing {role.name}")
+        pass
 
     async def removeHigherRoles(self, message: discord.Message, higher_roles):
         """
@@ -1488,24 +1489,24 @@ class Submission:
         :param higher_roles: list if ints corresponding to roles in config file
         :return:
         """
-        users_roles = [y for y in message.author.roles]
-        higher_roles = [discord.utils.get(message.server.roles, name=self.auth.get('level-roles', f'lvl_{level}')) for level in higher_roles]
-        _removed = 0
-        if not any(x in higher_roles for x in users_roles):
-            logger.info("None of the higher roles are on this user, returning")
-            return
-        for role in higher_roles:
-            if role in message.author.roles:
-                try:
-                    await self.bot.remove_roles(message.author, role)
-                    logger.debug(f"Role removed from {message.author}: {role.name}")
-                    _removed += 1
-                except:
-                    logger.error(f"Couldn't remove role from user: {role.name}")
-                    pass
-        logger.success(f"Removed {_removed} roles from user")
-        return
-
+        # users_roles = [y for y in message.author.roles]
+        # higher_roles = [discord.utils.get(message.server.roles, name=self.auth.get('level-roles', f'lvl_{level}')) for level in higher_roles]
+        # _removed = 0
+        # if not any(x in higher_roles for x in users_roles):
+        #     logger.info("None of the higher roles are on this user, returning")
+        #     return
+        # for role in higher_roles:
+        #     if role in message.author.roles:
+        #         try:
+        #             await self.bot.remove_roles(message.author, role)
+        #             logger.debug(f"Role removed from {message.author}: {role.name}")
+        #             _removed += 1
+        #         except:
+        #             logger.error(f"Couldn't remove role from user: {role.name}")
+        #             pass
+        # logger.success(f"Removed {_removed} roles from user")
+        # return
+        pass
 
 
 def check_folders():
