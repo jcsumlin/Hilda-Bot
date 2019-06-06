@@ -110,11 +110,8 @@ class Submission:
 
     async def on_reaction_add(self, reaction, user):
         userToUpdate = reaction.message.author.id
-        logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
         try:
-            logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
             if type(reaction.emoji) is discord.Emoji:
-                logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 #<:HildaNice:554394104117723136>
                 if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
@@ -141,7 +138,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
-                    logger.debug("reaction removed " + user.name + " " + str(reaction.emoji))
+                    logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
                     message_id = reaction.message.id
@@ -152,8 +149,9 @@ class Submission:
                     content_author.score -= 1
                     # commit session
                     self.session.commit()
+                    logger.debug(f"Reaction successfully removed from {reaction.message.id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
         except:
-            logger.error("Adding reaction broke for user " + userToUpdate)
+            logger.error(f"Removing reaction from {reaction.message.id} broke.")
 
     async def getDBUser(self, userID: str):# gets the database user based on the user's ID
         db_user = None  # return none if we can't find a user
@@ -1186,6 +1184,8 @@ class Submission:
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
+        self.bot.send_message(self.bot.get_channel("492574567777173504"),
+                              "Housekeeping has finished running. You may now !submit and !pride again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
