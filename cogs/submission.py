@@ -79,6 +79,13 @@ class Submission:
         await self.bot.send_message(channel, embed=embed)
 
     @commands.has_role("Staff")
+    async def listjobs(self, ctx):
+        jobs = self.scheduler.get_jobs()
+        for job in jobs:
+            logger.info(job)
+            await self.bot.send_message(ctx.message.channel,job)
+
+    @commands.has_role("Staff")
     @commands.command(pass_context=True)
     async def backup(self, ctx):
         if await self.checkChannel(ctx):
@@ -1400,14 +1407,24 @@ class Submission:
         stats['adores_gotten'] = adores
         return stats
 
-    async def giveXP(self, db_user, xp):
+    async def giveXP(self, db_user, xp: int):
+        """
+        Gives a user X amount of XP and updates their cooldown time. This is mostly used in the
+        case of a user chatting.
+        :param db_user: User object from database
+        :param xp: int, amounnt of XP to give this user
+        :return:
+        """
         if db_user != None:
             time_diff = (datetime.utcnow() - self.epoch).total_seconds() - db_user.xptime
             if time_diff >= 30:
                 # await self.getUserStats(db_user)
-                db_user.xptime = (datetime.utcnow() - self.epoch).total_seconds()
-                db_user.currentxp += int(xp)
-                self.session.commit()
+                try:
+                    db_user.xptime = (datetime.utcnow() - self.epoch).total_seconds()
+                    db_user.currentxp += int(xp)
+                    self.session.commit()
+                except Exception as e:
+                    logger.error(f"Failed to give {db_user.username} {xp} XP! {e}")
 
     async def checkLevelRole(self, message: discord.Message, current_level: int):
         """
