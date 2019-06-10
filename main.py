@@ -61,7 +61,7 @@ async def load(ctx, extension):
 
 # TODO: Add @commands.has_permissions(administrator=True) back to this command
 @bot.command(pass_context=True)
-@commands.has_role("Hildabot Commander")
+@commands.has_role("Staff")
 async def reload(ctx, extension):
     try:
         bot.unload_extension('cogs.' + extension)
