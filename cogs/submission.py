@@ -39,8 +39,8 @@ class Submission:
         DBSession = sessionmaker(bind=engine)
         self.session = DBSession()  # session.commit() to store data, and session.rollback() to discard changes
         self.scheduler = AsyncIOScheduler(timezone='America/New_York')
-        self.scheduler.add_job(self.housekeeper, trigger='cron', hour=23, replace_existing=True, coalesce=True,)
-        self.scheduler.add_job(self.setGame, 'interval', seconds=10, replace_existing=True, coalesce=True,)
+        self.scheduler.add_job(self.housekeeper, trigger='cron', hour=23, minute=1, second=1, replace_existing=True, coalesce=True)
+        self.scheduler.add_job(self.setGame, 'interval', seconds=10, replace_existing=True, coalesce=True)
         self.scheduler.start()
         self.auth = configparser.ConfigParser()
         self.auth.read('../auth.ini')
@@ -111,6 +111,8 @@ class Submission:
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
                 xp = int(len(message.content.split())*0.5)
+                if xp == 0:
+                    return
                 await self.giveXP(db_user, xp)
                 await self.levelup(message)
             else:
