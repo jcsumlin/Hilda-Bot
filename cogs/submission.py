@@ -79,6 +79,7 @@ class Submission:
         await self.bot.send_message(channel, embed=embed)
 
     @commands.has_role("Staff")
+    @commands.command(pass_context=True)
     async def listjobs(self, ctx):
         jobs = self.scheduler.get_jobs()
         for job in jobs:
