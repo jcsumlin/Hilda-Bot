@@ -562,15 +562,6 @@ class Submission:
                 await self.bot.send_message(ctx.message.channel, "```Markdown\n#Something went wrong.\n```")
                 self.session.rollback()
 
-    @commands.has_role("Giant")
-    @commands.command(pass_context=True)
-    async def kots(self, ctx):
-        if await self.checkChannel(ctx):
-            with open(f'data/server/cursedhilda.png', 'rb') as f:
-                icon = f.read()
-            await self.bot.edit_server(ctx.message.server, icon=icon)
-            await self.bot.send_message(ctx.message.author, "Server icon updated ;)")
-
     @commands.has_role("Staff")
     @commands.command(pass_context=True)
     async def deletesubmissions(self, ctx, user : discord.Member = None):
@@ -642,12 +633,12 @@ class Submission:
                 current_streak = db_user.streak
                 new_streak = current_streak - 1
                 current_xp = db_user.currentxp
-                xp_gained = 20 + int(math.floor(current_streak * 5))
+                xp_gained = 20 + int(math.floor(current_streak * 2))
                 current_level = db_user.level
                 new_xp_total = current_xp - xp_gained
-                if new_xp_total < 0: # decrease level
+                if new_xp_total < 0:  # decrease level
                     current_level = current_level - 1
-                    next_level_required_xp = current_level * 10 + 50
+                    next_level_required_xp = current_level * 15 + 50
                     new_xp_total = next_level_required_xp + new_xp_total
                     db_user.level = int(current_level)
                     db_user.currentxp = int(new_xp_total)
@@ -1095,9 +1086,9 @@ class Submission:
                 newcurrency = db_user.currency + 10
                 new_streak = int(db_user.streak) + 1
                 current_xp = db_user.currentxp
-                xp_gained = 20 + int(math.floor(new_streak * 5))
+                xp_gained = 20 + int(math.floor(new_streak * 2))
                 current_level = int(db_user.level)
-                next_level_required_xp = current_level * 10 + 50
+                next_level_required_xp = current_level * 15 + 50
                 new_xp_total = current_xp + xp_gained
                 # if we levelled up, increase level
                 if new_xp_total >= next_level_required_xp:
@@ -1194,7 +1185,7 @@ class Submission:
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        self.bot.send_message(self.bot.get_channel("492574567777173504"),
+        await self.bot.send_message(self.bot.get_channel("588105175047208962"),
                               "Housekeeping has finished running. You may now !submit and !pride again!")
 
     def getDBSubmission(self, messageID):
@@ -1386,8 +1377,8 @@ class Submission:
                  "level": db_user.level,
                  "coins": db_user.currency,
                  "streak": db_user.streak,
-                 "next_level_required_xp": (db_user.level * 10) + 50,
-                 "percent": db_user.currentxp / ((db_user.level * 10) + 50),
+                 "next_level_required_xp": (db_user.level * 15) + 50,
+                 "percent": db_user.currentxp / ((db_user.level * 15) + 50),
                  "highscore": db_user.highscore,
                  "adores_given": db_user.adores}
         percent = stats['percent']
