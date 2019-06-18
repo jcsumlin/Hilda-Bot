@@ -1185,7 +1185,7 @@ class Submission:
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        await self.bot.send_message(self.bot.get_channel("588105175047208962"),
+        await self.bot.send_message(self.bot.get_channel("495034452422950915"),
                               "Housekeeping has finished running. You may now !submit and !pride again!")
 
     def getDBSubmission(self, messageID):
