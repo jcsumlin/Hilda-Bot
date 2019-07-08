@@ -374,16 +374,16 @@ class Submission:
                 stats_embed.add_field(name="Stats",
                                       value=f"    **Submits**: {stats['total_submissions']} | **Tokens**: {stats['coins']}",
                                       inline=False)
-#                 if stats['total_pride_submissions'] > 0:
-#                     stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
-#                                           value=f"    **Submits**: {stats['total_pride_submissions']}",
-#                                           inline=False)
+                if stats['total_pride_submissions'] > 0:
+                    stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
+                                          value=f"    **Submits**: {stats['total_pride_submissions']}",
+                                          inline=False)
 #                     if db_user.pridesubmitted == True:
 #                         submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
 #                     else:
 #                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
-#                     # score_card = name_card + xp_card + adores_card + stats_card
-#                     stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
+                    # score_card = name_card + xp_card + adores_card + stats_card
+                    stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -809,7 +809,7 @@ class Submission:
                     await self.bot.send_message(ctx.message.author, embed=embed_admin)
                 await self.bot.send_message(ctx.message.author, embed=embed_xp)
                 await self.bot.send_message(ctx.message.author, embed=embed_content)
-                await self.bot.send_message(ctx.message.author, embed=embed_events)
+#                 await self.bot.send_message(ctx.message.author, embed=embed_events)
             except discord.Forbidden:
                 message = await self.commandError("Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)", ctx.message.channel)
                 await asyncio.sleep(5)
@@ -914,28 +914,28 @@ class Submission:
             await asyncio.sleep(5)
             await self.bot.delete_message(message)
 
-    @help.command(name="events", pass_context=True)
-    async def _events(self, ctx):
-        embed_events = discord.Embed(title="Events",
-                                     description="All commands related to HildaCord's current events",
-                                     color=0x90BDD4)
-        embed_events.add_field(name="!pride",
-                               value="Please go to #pride-2019 to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!pride [comment (optional)]' as a comment to it.",
-                               inline=False)
-        embed_events.add_field(name="!pride [link] [comment (optional)]",
-                               value="Please go to #pride-2019 to use this command. If you'd like to submit via internet link, make sure you right click"
-                                     " the image and select 'copy image location' and submit that URL using"
-                                     " the !pride command.",
-                               inline=False)
-        try:
-            await self.bot.send_message(ctx.message.author, embed=embed_events)
-        except discord.Forbidden:
-            message = await self.commandError(
-                "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
-                ctx.message.channel)
-            await asyncio.sleep(5)
-            await self.bot.delete_message(message)
+#     @help.command(name="events", pass_context=True)
+#     async def _events(self, ctx):
+#         embed_events = discord.Embed(title="Events",
+#                                      description="All commands related to HildaCord's current events",
+#                                      color=0x90BDD4)
+#         embed_events.add_field(name="!pride",
+#                                value="Please go to #pride-2019 to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+#                                      "into discord and add '!pride [comment (optional)]' as a comment to it.",
+#                                inline=False)
+#         embed_events.add_field(name="!pride [link] [comment (optional)]",
+#                                value="Please go to #pride-2019 to use this command. If you'd like to submit via internet link, make sure you right click"
+#                                      " the image and select 'copy image location' and submit that URL using"
+#                                      " the !pride command.",
+#                                inline=False)
+#         try:
+#             await self.bot.send_message(ctx.message.author, embed=embed_events)
+#         except discord.Forbidden:
+#             message = await self.commandError(
+#                 "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+#                 ctx.message.channel)
+#             await asyncio.sleep(5)
+#             await self.bot.delete_message(message)
 
 
     @commands.has_role("Staff")
