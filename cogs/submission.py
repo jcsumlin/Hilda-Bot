@@ -123,7 +123,7 @@ class Submission:
         try:
             if type(reaction.emoji) is discord.Emoji:
                 #<:HildaNice:554394104117723136>
-                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit")):
                     logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -147,7 +147,7 @@ class Submission:
             # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
-                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit")):
                     logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -254,26 +254,26 @@ class Submission:
                 except:
                     pass
 
-    @commands.command(pass_context=True)
-    async def pride(self, ctx):
-        if ctx.message.channel.id == "582403296686374932":
-            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
-                # do linksubmit
-                message = ctx.message.content[7:].lstrip(" ")
-                if message.startswith('https://') or message.startswith('http://'):
-                    comment = ""
-                else:
-                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-                await self.linkSubmit(ctx.message, ctx.message.author, comment, pride=True)
-            else:
-                try:
-                    # normal submit.
-                    comment = ctx.message.content[7:].lstrip(" ")
-                    await self.normalSubmit(ctx.message, ctx.message.author, comment, pride=True)
-                except:
-                    pass
-        else:
-            await self.commandError("Please go to #pride-2019 to use this command", ctx.message.channel)
+#     @commands.command(pass_context=True)
+#     async def pride(self, ctx):
+#         if ctx.message.channel.id == "582403296686374932":
+#             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
+#                 # do linksubmit
+#                 message = ctx.message.content[7:].lstrip(" ")
+#                 if message.startswith('https://') or message.startswith('http://'):
+#                     comment = ""
+#                 else:
+#                     comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
+#                 await self.linkSubmit(ctx.message, ctx.message.author, comment, pride=True)
+#             else:
+#                 try:
+#                     # normal submit.
+#                     comment = ctx.message.content[7:].lstrip(" ")
+#                     await self.normalSubmit(ctx.message, ctx.message.author, comment, pride=True)
+#                 except:
+#                     pass
+#         else:
+#             await self.commandError("Please go to #pride-2019 to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
@@ -374,16 +374,16 @@ class Submission:
                 stats_embed.add_field(name="Stats",
                                       value=f"    **Submits**: {stats['total_submissions']} | **Tokens**: {stats['coins']}",
                                       inline=False)
-                if stats['total_pride_submissions'] > 0:
-                    stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
-                                          value=f"    **Submits**: {stats['total_pride_submissions']}",
-                                          inline=False)
-                    if db_user.pridesubmitted == True:
-                        submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
-                    else:
-                        submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
-                    # score_card = name_card + xp_card + adores_card + stats_card
-                    stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
+#                 if stats['total_pride_submissions'] > 0:
+#                     stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
+#                                           value=f"    **Submits**: {stats['total_pride_submissions']}",
+#                                           inline=False)
+#                     if db_user.pridesubmitted == True:
+#                         submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
+#                     else:
+#                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
+#                     # score_card = name_card + xp_card + adores_card + stats_card
+#                     stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
