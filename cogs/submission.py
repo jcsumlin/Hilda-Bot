@@ -443,42 +443,42 @@ class Submission:
                                           '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
                                               difference_hours, difference_minutes, seconds_to_work))
 
-    @commands.command(pass_context=True)
-    async def idea(self, ctx):
-        if await self.checkChannel(ctx):
-            serv = ctx.message.server
-            # try to find user in database using id
-            db_user = await self.getDBUser(ctx.message.author.id)
-
-            if (db_user == None):
-                await self.bot.send_message(ctx.message.channel, "```diff\n- You need to be registered to suggest prompts.\n```")
-            else:
-                if ctx.message.content[5:].lstrip(" ") == "":
-                    await self.commandError("Your must specify a prompt suggestion for this command to work! !idea {your brilliant idea}",
-                                      ctx.message.channel)
-                    return
-                db_user.promptsadded = newpromptscore = db_user.promptsadded + 1
-                self.session.commit()
-                await self.bot.send_message(ctx.message.channel, "```diff\n+ Your prompt suggestion has been recorded!\n```")
-                # if newpromptscore == 20:
-                #     for rank in serv.roles:
-                #         if rank.name == "Idea Machine":
-                #             await self.bot.add_roles(ctx.message.author, rank)
-                #             await self.bot.send_message(ctx.message.channel,
-                #                                       "```Python\n @{0} Achievement Unlocked: Idea Machine\n```".format(
-                #                                           ctx.message.author.name))
-                #         else:
-                #             try:
-                #                 role = self.bot.create_role(name="Idea Machine")
-                #                 logger.success("Role created: Idea Machine")
-                #                 await self.bot.add_roles(ctx.message.author, rank)
-                #             except Exception:
-                #                 logger.error("Could not create role: Idea Machine")
-                #                 await self.bot.send_message(ctx.message.channel,
-                #                                             "```diff\n- Could not create role: Idea Machine. Please check bot permissions.\n```")
-
-                with open('../prompts.txt', 'a+') as fp:
-                    fp.write(ctx.message.content[6:] + '\n')
+    # @commands.command(pass_context=True)
+    # async def idea(self, ctx):
+    #     if await self.checkChannel(ctx):
+    #         serv = ctx.message.server
+    #         # try to find user in database using id
+    #         db_user = await self.getDBUser(ctx.message.author.id)
+    #
+    #         if (db_user == None):
+    #             await self.bot.send_message(ctx.message.channel, "```diff\n- You need to be registered to suggest prompts.\n```")
+    #         else:
+    #             if ctx.message.content[5:].lstrip(" ") == "":
+    #                 await self.commandError("Your must specify a prompt suggestion for this command to work! !idea {your brilliant idea}",
+    #                                   ctx.message.channel)
+    #                 return
+    #             db_user.promptsadded = newpromptscore = db_user.promptsadded + 1
+    #             self.session.commit()
+    #             await self.bot.send_message(ctx.message.channel, "```diff\n+ Your prompt suggestion has been recorded!\n```")
+    #             # if newpromptscore == 20:
+    #             #     for rank in serv.roles:
+    #             #         if rank.name == "Idea Machine":
+    #             #             await self.bot.add_roles(ctx.message.author, rank)
+    #             #             await self.bot.send_message(ctx.message.channel,
+    #             #                                       "```Python\n @{0} Achievement Unlocked: Idea Machine\n```".format(
+    #             #                                           ctx.message.author.name))
+    #             #         else:
+    #             #             try:
+    #             #                 role = self.bot.create_role(name="Idea Machine")
+    #             #                 logger.success("Role created: Idea Machine")
+    #             #                 await self.bot.add_roles(ctx.message.author, rank)
+    #             #             except Exception:
+    #             #                 logger.error("Could not create role: Idea Machine")
+    #             #                 await self.bot.send_message(ctx.message.channel,
+    #             #                                             "```diff\n- Could not create role: Idea Machine. Please check bot permissions.\n```")
+    #
+    #             with open('../prompts.txt', 'a+') as fp:
+    #                 fp.write(ctx.message.content[6:] + '\n')
 
     async def register(self, message):
         curdate = datetime.utcnow()
@@ -525,12 +525,12 @@ class Submission:
         else:
             logger.error(f"{message.author.name} is already registered!")
 
-    @commands.command(pass_context=True)
-    async def randomidea(self, ctx):
-        if await self.checkChannel(ctx):
-            with open("../prompts.txt", "r") as f:
-                lines = f.read().split('\n')
-            await self.bot.send_message(ctx.message.channel, "```diff\n{}\n```".format(random.choice(lines)))
+    # @commands.command(pass_context=True)
+    # async def randomidea(self, ctx):
+    #     if await self.checkChannel(ctx):
+    #         with open("../prompts.txt", "r") as f:
+    #             lines = f.read().split('\n')
+    #         await self.bot.send_message(ctx.message.channel, "```diff\n{}\n```".format(random.choice(lines)))
 
     @commands.has_role('Staff')
     @commands.command(pass_context=True)
@@ -781,12 +781,12 @@ class Submission:
                             value="The !timeleft command will let you know how much longer you have "
                                   "left to submit for the day!",
                             inline=False)
-            embed_content.add_field(name="!randomidea",
-                            value="Having trouble figuring out what to create?",
-                            inline=False)
-            embed_content.add_field(name="!idea [idea]",
-                            value="Add a random idea to the \"randomidea\" list!",
-                            inline=False)
+            # embed_content.add_field(name="!randomidea",
+            #                 value="Having trouble figuring out what to create?",
+            #                 inline=False)
+            # embed_content.add_field(name="!idea [idea]",
+            #                 value="Add a random idea to the \"randomidea\" list!",
+            #                 inline=False)
             embed_events = discord.Embed(title="Events",
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
@@ -899,12 +899,12 @@ class Submission:
                                 value="The !timeleft command will let you know how much longer you have "
                                       "left to submit for the day!",
                                 inline=False)
-        embed_content.add_field(name="!randomidea",
-                                value="Having trouble figuring out what to create?",
-                                inline=False)
-        embed_content.add_field(name="!idea [idea]",
-                                value="Add a random idea to the \"randomidea\" list!",
-                                inline=False)
+        # embed_content.add_field(name="!randomidea",
+        #                         value="Having trouble figuring out what to create?",
+        #                         inline=False)
+        # embed_content.add_field(name="!idea [idea]",
+        #                         value="Add a random idea to the \"randomidea\" list!",
+        #                         inline=False)
         try:
             await self.bot.send_message(ctx.message.author, embed=embed_content)
         except discord.Forbidden:
