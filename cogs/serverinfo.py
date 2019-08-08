@@ -133,7 +133,7 @@ class ServerStats:
         em.add_field(name='Created At',
                      value=server.created_at.__format__('%A, %d. %B %Y @ %H:%M:%S'))
         # em.add_field(name="Role List", value=server_roles, inline=True)
-        em.set_thumbnail(url=server.icon_url)
+        em.set_thumbnail(url="https://images-ext-1.discordapp.net/external/ZGncUvNEnhvPPPwqpaMfqAOemiX7-CSlSOwbU1zhrPY/%3Fsize%3D1024/https/cdn.discordapp.com/icons/492572315138392064/a_2443b46341602635d0caecb9c321bb8d.gif")
         em.set_author(name='Server Info', icon_url='https://i.imgur.com/RHagTDg.png')
         em.set_footer(text='Server ID: %s' % server.id)
         return em
