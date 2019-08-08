@@ -119,6 +119,7 @@ class ServerStats:
 
         em = discord.Embed(color=0xea7938)
         em.add_field(name='Name', value=server.name)
+        em.add_field(name='Server Invite Link', value="https://discord.gg/hilda")
         em.add_field(name='Owner', value=server_owner, inline=False)
         em.add_field(name='Members', value=server.member_count)
         em.add_field(name='Bots', value=bots)
@@ -174,6 +175,7 @@ class ServerStats:
 
         em = discord.Embed(color=0xea7938)
         em.add_field(name='Name', value=server.name)
+        em.add_field(name='Server Invite Link', value="https://discord.gg/hilda")
         em.add_field(name='Owner', value=server_owner, inline=False)
         em.add_field(name='Members', value=server.member_count)
         em.add_field(name='Bots', value=bots)
