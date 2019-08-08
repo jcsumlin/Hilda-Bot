@@ -162,10 +162,6 @@ class ServerStats:
                 channel_count += 1
 
         role_count = len(server.roles)
-        # server_roles = ''
-        # for role in server.roles:
-        #     server_roles += role.name + ', '
-        # server_roles = server_roles[:-2]
         emoji_count = len(server.emojis)
         server_owner = (str(server.owner)).replace('_', '\_').replace('*', '\*').replace('~', '\~').replace('`', '\`')
 
@@ -183,8 +179,8 @@ class ServerStats:
         em.add_field(name='Number of emotes', value=str(emoji_count))
         em.add_field(name='Created At',
                      value=server.created_at.__format__('%A, %d. %B %Y @ %H:%M:%S'))
-        # em.add_field(name="Role List", value=server_roles, inline=True)
         em.set_thumbnail(url=server.icon_url)
+        logger.info(server.icon_url)
         em.set_author(name='Server Info', icon_url='https://i.imgur.com/RHagTDg.png')
         em.set_footer(text='Server ID: %s' % server.id)
         logger.info("Before send")
