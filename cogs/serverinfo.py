@@ -137,6 +137,7 @@ class ServerStats:
         await asyncio.sleep(3)
         await self.bot.delete_message(message_reply)
 
+    @commands.has_role("Staff")
     @commands.command(aliases=['server', 'sinfo', 'si'], pass_context=True)
     async def serverinfo(self, ctx):
         """Various info about the server. !help server for more info."""
@@ -186,6 +187,7 @@ class ServerStats:
         em.set_thumbnail(url=server.icon_url)
         em.set_author(name='Server Info', icon_url='https://i.imgur.com/RHagTDg.png')
         em.set_footer(text='Server ID: %s' % server.id)
+        logger.info("Before send")
         message = await self.bot.send_message(ctx.message.channel, embed=em)
         await self.setserverinfomessage(message)
 
