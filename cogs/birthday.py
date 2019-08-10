@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 from loguru import logger
 from pytz import timezone
+import re
 
 from .utils.dataIO import dataIO, fileIO
 
@@ -27,6 +28,10 @@ class Birthdays:
 
     @birthday.group(pass_context=True)
     async def add(self, ctx, user: discord.User, birthday):
+        pattern = re.compile("^[0-9]{1,2}\/[0-9)]{1,2}\/[0-9]{4}$")
+        if not pattern.match(birthday):
+            await self.bot.send_message(ctx.message.channel, 'Please use 00/00/0000 date format!')
+            return
         birthday = birthday.split('/')
         birthdays = await self.get_config()
         if int(birthday[2]) >= datetime.now().year:
@@ -52,6 +57,32 @@ class Birthdays:
         birthdays[ctx.message.server.id]['role_id'] = role.id
         await self.save_config(birthdays)
         await self.bot.send_message(ctx.message.channel, "Birthday Role Set!")
+
+    @birthday.group(pass_context=True)
+    async def edit(self, ctx, birthday):
+        pattern = re.compile("^[0-9]{1,2}\/[0-9)]{1,2}\/[0-9]{4}$")
+        if not pattern.match(birthday):
+            await self.bot.send_message(ctx.message.channel, 'Please use 00/00/0000 date format!')
+            return
+        birthday = birthday.split('/')
+        birthdays = await self.get_config()
+        if int(birthday[2]) >= datetime.now().year:
+            await self.bot.send_message(ctx.message.channel, "That's not a valid year silly")
+            return
+        if str(ctx.message.server.id) in birthdays.keys():
+            birthday = datetime(year=int(birthday[2]), month=int(birthday[0]), day=int(birthday[1]))
+            for birthday_user in birthdays[ctx.message.server.id]['users']:
+                if birthday_user['user_id'] == ctx.message.author.id:
+                    birthday_user['birthday'] = str(birthday)
+                    await self.save_config(birthdays)
+                    await self.bot.send_message(ctx.message.channel, "Your birthday has been updated!")
+                    return
+            await self.bot.send_message(ctx.message.channel, "Your "
+                                                             "birthday has not been registered"
+                                                             " before please add it using"
+                                                             " !birthday add @your_username 00/00/0000!")
+        else:
+            await self.bot.send_message(ctx.message.channel, "Birthdays not setup!")
 
     @birthday.group(pass_context=True)
     async def list(self, ctx):
