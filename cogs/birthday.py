@@ -30,7 +30,7 @@ class Birthdays:
     async def add(self, ctx, user: discord.User, birthday):
         pattern = re.compile("^[0-9]{1,2}\/[0-9)]{1,2}\/[0-9]{4}$")
         if not pattern.match(birthday):
-            await self.bot.send_message(ctx.message.channel, 'Please use 00/00/0000 date format!')
+            await self.bot.send_message(ctx.message.channel, 'Please use MM/DD/YYYY date format!')
             return
         birthday = birthday.split('/')
         birthdays = await self.get_config()
@@ -62,7 +62,7 @@ class Birthdays:
     async def edit(self, ctx, birthday):
         pattern = re.compile("^[0-9]{1,2}\/[0-9)]{1,2}\/[0-9]{4}$")
         if not pattern.match(birthday):
-            await self.bot.send_message(ctx.message.channel, 'Please use 00/00/0000 date format!')
+            await self.bot.send_message(ctx.message.channel, 'Please use MM/DD/YYYY date format!')
             return
         birthday = birthday.split('/')
         birthdays = await self.get_config()
@@ -80,7 +80,7 @@ class Birthdays:
             await self.bot.send_message(ctx.message.channel, "Your "
                                                              "birthday has not been registered"
                                                              " before please add it using"
-                                                             " !birthday add @your_username 00/00/0000!")
+                                                             " !birthday add @your_username MM/DD/YYYY!")
         else:
             await self.bot.send_message(ctx.message.channel, "Birthdays not setup!")
 
