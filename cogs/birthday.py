@@ -98,12 +98,12 @@ class Birthdays:
                         return
                     if birthday.month != now.month or birthday.day != now.day and user['COMPLETE']:
                         user['COMPLETE'] = False
-                        try:
-                            await self.bot.remove_roles(member, birthday_role)
-                        except discord.Forbidden:
-                            logger.error("Does Not have permissions to add roles to users!")
-                        except Exception:
-                            logger.error("Error removing role from user" + member.name)
+                        # try:
+                        #     await self.bot.remove_roles(member, birthday_role)
+                        # except discord.Forbidden:
+                        #     logger.error("Does Not have permissions to add roles to users!")
+                        # except Exception:
+                        #     logger.error("Error removing role from user" + member.name)
                         await self.save_config(birthdays)
                     if birthday.month == now.month and birthday.day == now.day and not user['COMPLETE']:
                         if birthday_role is not None:
