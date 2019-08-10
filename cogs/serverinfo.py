@@ -59,8 +59,8 @@ class ServerStats:
         await self.bot.edit_message(message=message, embed=embed)
 
     async def on_server_role_update(self, before, after):
-        serverInfoMessage = self.getServerInfoMessage(member=before[0])
-        embed = self.newServerInfo(member=before[0])
+        serverInfoMessage = self.getServerInfoMessage(member=before)
+        embed = self.newServerInfo(member=before)
         si_channel = self.bot.get_channel(list(serverInfoMessage.keys())[0])
         message = await self.bot.get_message(si_channel, list(serverInfoMessage.values())[0])
         await self.bot.edit_message(message=message, embed=embed)

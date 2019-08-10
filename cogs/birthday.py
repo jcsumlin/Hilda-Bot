@@ -80,20 +80,37 @@ class Birthdays:
 
     async def check_birthdays(self):
         while True:
+            await asyncio.sleep(10)
             birthdays = await self.get_config()
             for key, value in birthdays.items():
                 for user in value['users']:
                     birthday = datetime.strptime(user['birthday'], "%Y-%m-%d 00:00:00")
                     eastern = timezone('US/Eastern')
                     now = datetime.now(eastern)
+                    channel = self.bot.get_channel(value['channel'])
+                    if channel is None:
+                        continue
 
+                    birthday_role = discord.utils.find(lambda role: role.id == '609580724173013004',
+                                                       channel.server.roles)
+                    member = discord.utils.find(lambda m: m.id == user['user_id'], channel.server.members)
+                    if member is None:
+                        return
                     if birthday.month != now.month or birthday.day != now.day and user['COMPLETE']:
                         user['COMPLETE'] = False
+                        try:
+                            await self.bot.remove_roles(member, birthday_role)
+                        except discord.Forbidden:
+                            logger.error("Does Not have permissions to add roles to users!")
+                        except Exception:
+                            logger.error("Error removing role from user" + member.name)
                         await self.save_config(birthdays)
                     if birthday.month == now.month and birthday.day == now.day and not user['COMPLETE']:
-                        channel = self.bot.get_channel(value['channel'])
-                        if channel is None:
-                            continue
+                        if birthday_role is not None:
+                            try:
+                                await self.bot.add_roles(member, birthday_role)
+                            except discord.Forbidden:
+                                logger.error("Does Not have permissions to add roles to users!")
                         years = now.year - birthday.year
                         if 4 <= years <= 20 or 24 <= years <= 30:
                             suffix = "th"
