@@ -24,7 +24,7 @@ def load_cogs(folder):
     os.chdir(folder)
     files = []
     for file in glob.glob("*.py"):
-        file = re.search('^([A-Za-z1-9]{1,})[^.py]', file).group(0)
+        file = re.search('^([A-Za-z1-9]{1,})(?:.py)$', file).group(0)
         files.append(file)
     return files
 
