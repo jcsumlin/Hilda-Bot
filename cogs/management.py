@@ -59,7 +59,7 @@ class Management:
         else:
             await self.bot.send_message("You don't have access to this command!")
 
-    # @commands.has_role("Staff")
+    @commands.has_role("Staff")
     @commands.group(pass_context=True)
     async def response(self, ctx):
         if ctx.invoked_subcommand is None:
