@@ -122,8 +122,8 @@ class Birthdays:
             return await self.bot.send_message(ctx.message.channel, ":interrobang: Birthday Message Channel Not Set For This Server!")
 
     async def check_birthdays(self):
+        await self.bot.wait_until_ready()
         while True:
-            await asyncio.sleep(10)
             birthdays = await self.get_config()
             for key, value in birthdays.items():
                 if len(value['users']) == 0:
@@ -133,7 +133,7 @@ class Birthdays:
                     eastern = timezone('US/Eastern')
                     now = datetime.now(eastern)
                     channel = self.bot.get_channel(value['channel'])
-                    if channel is None:
+                    if channel is None or channel.is_private:
                         continue
                     birthday_role = None
                     if 'role_id' in value:
@@ -168,7 +168,7 @@ class Birthdays:
                         await self.bot.send_message(channel, f"Hey <@{user['user_id']}>! I just wanted to wish you the happiest of birthdays on your {years}{suffix} birthday! :birthday: :heart:")
                         user['COMPLETE'] = True
                         await self.save_config(birthdays)
-            await asyncio.sleep(1)
+            await asyncio.sleep(60)
 
 
 def check_folders():
@@ -189,5 +189,8 @@ def setup(bot):
     check_files()
     n = Birthdays(bot)
     loop = asyncio.get_event_loop()
-    loop.create_task(n.check_birthdays())
+    try:
+        loop.create_task(n.check_birthdays())
+    except Exception as e:
+        logger.exception(e)
     bot.add_cog(n)
