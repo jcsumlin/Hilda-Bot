@@ -31,6 +31,8 @@ class ServerStats:
         await self.bot.edit_message(message=message, embed=embed)
 
     async def on_channel_delete(self, channel):
+        if channel.is_private:
+            return
         serverInfoMessage = self.getServerInfoMessage(member=channel)
         embed = self.newServerInfo(member=channel)
         si_channel = self.bot.get_channel(list(serverInfoMessage.keys())[0])
@@ -38,6 +40,8 @@ class ServerStats:
         await self.bot.edit_message(message=message, embed=embed)
 
     async def on_channel_create(self, channel):
+        if channel.is_private:
+            return
         serverInfoMessage = self.getServerInfoMessage(member=channel)
         embed = self.newServerInfo(member=channel)
         si_channel = self.bot.get_channel(list(serverInfoMessage.keys())[0])
