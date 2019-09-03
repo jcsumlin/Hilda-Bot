@@ -16,7 +16,7 @@ class Birthdays:
     def __init__(self, bot):
         self.bot = bot
         self.scheduler = AsyncIOScheduler(timezone='America/New_York')
-        self.scheduler.add_job(self.check_birthdays(), 'interval', minutes=1, replace_existing=True, coalesce=True)
+        self.scheduler.add_job(self.check_birthdays, 'interval', minutes=1, replace_existing=True, coalesce=True)
         self.scheduler.start()
 
     async def get_config(self):
@@ -128,7 +128,6 @@ class Birthdays:
     async def check_birthdays(self):
         await self.bot.wait_until_ready()
         birthdays = await self.get_config()
-        print("checking bdays")
         for key, value in birthdays.items():
             if len(value['users']) == 0:
                 continue
