@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 import discord
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.ext import commands
 from loguru import logger
 from pytz import timezone
@@ -14,6 +15,9 @@ from .utils.dataIO import dataIO, fileIO
 class Birthdays:
     def __init__(self, bot):
         self.bot = bot
+        self.scheduler = AsyncIOScheduler(timezone='America/New_York')
+        self.scheduler.add_job(self.check_birthdays(), 'interval', minutes=10, replace_existing=True, coalesce=True)
+        self.scheduler.start()
 
     async def get_config(self):
         return dataIO.load_json('data/birthday/birthdays.json')
@@ -168,7 +172,6 @@ class Birthdays:
                     await self.bot.send_message(channel, f"Hey <@{user['user_id']}>! I just wanted to wish you the happiest of birthdays on your {years}{suffix} birthday! :birthday: :heart:")
                     user['COMPLETE'] = True
                     await self.save_config(birthdays)
-        await asyncio.sleep(60)
 
 
 def check_folders():
@@ -188,9 +191,4 @@ def setup(bot):
     check_folders()
     check_files()
     n = Birthdays(bot)
-    loop = asyncio.get_event_loop()
-    try:
-        loop.create_task(n.check_birthdays())
-    except Exception as e:
-        logger.exception(e)
     bot.add_cog(n)
