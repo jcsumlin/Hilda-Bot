@@ -25,7 +25,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 # declaration for User class is in here
-from create_databases import Base, User, Content
+from create_databases import Base, User, Content, SpecialEvents
 from .utils.dataIO import dataIO
 
 
@@ -92,16 +92,22 @@ class Submission:
         if await self.checkChannel(ctx):
             content = self.session.query(Content).all()
             with open("../backup.csv", "w") as f:
-                f.write("submission_id,message_id,user,date,link,score,comment,xp_from_content,is_pride\n")
+                f.write("Submission ID,Message ID,User's Name,Date Posted,Link,Score,Comment,XP From Content,Event\n")
                 for row in content:
+                    if row.event_id is not None:
+                        event = self.session.query(SpecialEvents).filter_by(id=int(row.event_id)).one()
+                        event = event.name
+                    else:
+                         event = "N/A"
                     f.write(str(row.submission_id) + ',' + str(row.message_id)
                             + ',' + str(row.user) + ',' + str(row.datesubmitted) + ',' + str(row.link)
                             + ',' + str(row.score) + ',' + str(row.comment) + ',' +
-                            str(row.xpfromcontent) + ',' + str(row.pride) + "\n")
+                            str(row.xpfromcontent) + ',' + str(event) + "\n")
             embed = discord.Embed(title="Backup Complete!", color=0x00ff00)
             await self.bot.send_message(ctx.message.channel, embed=embed)
             await self.bot.send_file(ctx.message.author, '../backup.csv')
             logger.success("Done")
+            os.remove('../backup.csv')
 
     async def on_message(self, message):
         if message.author.bot:
@@ -123,8 +129,8 @@ class Submission:
         try:
             if type(reaction.emoji) is discord.Emoji:
                 #<:HildaNice:554394104117723136>
-                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit")):
-                    logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!inktober")):
+                    # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
                     message_id = reaction.message.id
@@ -135,6 +141,8 @@ class Submission:
                     content_author.score += 1
                     # commit session
                     self.session.commit()
+                    logger.debug(f"Reaction successfully added from {reaction.message.id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
+
                 else:
                     pass
         except:
@@ -147,8 +155,8 @@ class Submission:
             # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
-                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit")):
-                    logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
+                if reaction.emoji.id == '554394104117723136' and (reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!inktober")):
+                    # logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
                     message_id = reaction.message.id
@@ -184,12 +192,12 @@ class Submission:
             logger.error('Multiple users found, something is really broken!')
         return db_user  # this value will be None or a valid user, make sure t
 
-    async def linkSubmit(self, message, userToUpdate, comment, pride=False):
+    async def linkSubmit(self, message, userToUpdate, comment, event_id: int = False):
         url_pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
         url = re.search(url_pattern, message.content.lower()).group(0)
         logger.debug('link submitting for ' + str(userToUpdate.name))
         logger.debug(str(userToUpdate.name) + "'s url - " + url[1])
-        await self.handleSubmit(message, userToUpdate, url, comment, pride=pride)
+        await self.handleSubmit(message, userToUpdate, url, comment, event_id=event_id)
 
     @commands.cooldown(1,90, commands.BucketType.server)
     @commands.has_role("Staff")
@@ -212,7 +220,7 @@ class Submission:
                                     streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
                                     totalsubmissions=0,
                                     currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True,
-                                    xptime=(datetime.utcnow() - self.epoch).total_seconds(),  pridesubmitted=False)
+                                    xptime=(datetime.utcnow() - self.epoch).total_seconds(),  special_event_submitted=False)
                     self.session.add(new_user)
                     self.session.commit()
                     users_updated += 1
@@ -254,26 +262,26 @@ class Submission:
                 except:
                     pass
 
-#     @commands.command(pass_context=True)
-#     async def pride(self, ctx):
-#         if ctx.message.channel.id == "582403296686374932":
-#             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
-#                 # do linksubmit
-#                 message = ctx.message.content[7:].lstrip(" ")
-#                 if message.startswith('https://') or message.startswith('http://'):
-#                     comment = ""
-#                 else:
-#                     comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-#                 await self.linkSubmit(ctx.message, ctx.message.author, comment, pride=True)
-#             else:
-#                 try:
-#                     # normal submit.
-#                     comment = ctx.message.content[7:].lstrip(" ")
-#                     await self.normalSubmit(ctx.message, ctx.message.author, comment, pride=True)
-#                 except:
-#                     pass
-#         else:
-#             await self.commandError("Please go to #pride-2019 to use this command", ctx.message.channel)
+    @commands.command(pass_context=True)
+    async def inktober(self, ctx):
+        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id == "553739065074253834":
+            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
+                # do linksubmit
+                message = ctx.message.content[10:].lstrip(" ")
+                if message.startswith('https://') or message.startswith('http://'):
+                    comment = ""
+                else:
+                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
+                await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+            else:
+                try:
+                    # normal submit.
+                    comment = ctx.message.content[7:].lstrip(" ")
+                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+                except:
+                    pass
+        else:
+            await self.commandError("Please go to #submissions to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
@@ -378,12 +386,16 @@ class Submission:
                     stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
                                           value=f"    **Submits**: {stats['total_pride_submissions']}",
                                           inline=False)
-#                     if db_user.pridesubmitted == True:
-#                         submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
-#                     else:
-#                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
+                if stats['total_inktober_submissions'] > 0:
+                    stats_embed.add_field(name=":pen_fountain: Inktober Event 2019 :pen_fountain:",
+                                          value=f"    **Submits**: {stats['total_inktober_submissions']}",
+                                          inline=False)
+                    if db_user.special_event_submitted is True:
+                        submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
+                    else:
+                        submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
-#                     stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
+                    stats_embed.add_field(name="Inktober Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -495,7 +507,7 @@ class Submission:
                             streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
                             totalsubmissions=0, currentxp=0, adores=0, highscore=0, decaywarning=True,
                             levelnotification=True,
-                            xptime=(datetime.utcnow() - self.epoch).total_seconds(), pridesubmitted=False)
+                            xptime=(datetime.utcnow() - self.epoch).total_seconds(), special_event_submitted=False)
             # add to session
             self.session.add(new_user)
             # # give relevant roles
@@ -653,8 +665,9 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if submission.pride == True:
-                    db_user.pridesubmitted = False
+                if isinstance(submission.event_id, int):
+                    if self.session.query(SpecialEvents).filter(id=submission.event_id).one_or_none() is not None:
+                        db_user.special_event_submitted = False
                 else:
                     db_user.submitted = False
                 # and push all cells to the database
@@ -791,12 +804,12 @@ class Submission:
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
             embed_events.add_field(name="!pride",
-                                    value="Please go to #pride-2019 to use this command. To submit "
+                                    value="Please go to #submissions to use this command. To submit "
                                           "content, drag and drop the file (.png, .gif, .jpg) "
                                           "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                     inline=False)
             embed_events.add_field(name="!pride [link] [comment (optional)]",
-                                    value="Please go to #pride-2019 to use this command. "
+                                    value="Please go to #submissions to use this command. "
                                           "If you'd like to submit via internet link, make sure you right click"
                                           " the image and select 'copy image location' and submit that URL using"
                                           " the !pride command.",
@@ -884,7 +897,7 @@ class Submission:
     @help.command(name="content", pass_context=True)
     async def _content(self, ctx):
         embed_content = discord.Embed(title="Content",
-                                      description="All commands related to HildaBot's content curration features",
+                                      description="All commands related to HildaBot's content curation features",
                                       color=0x90BDD4)
         embed_content.add_field(name="!submit",
                                 value="To submit content, drag and drop the file (.png, .gif, .jpg) "
@@ -914,28 +927,28 @@ class Submission:
             await asyncio.sleep(5)
             await self.bot.delete_message(message)
 
-#     @help.command(name="events", pass_context=True)
-#     async def _events(self, ctx):
-#         embed_events = discord.Embed(title="Events",
-#                                      description="All commands related to HildaCord's current events",
-#                                      color=0x90BDD4)
-#         embed_events.add_field(name="!pride",
-#                                value="Please go to #pride-2019 to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-#                                      "into discord and add '!pride [comment (optional)]' as a comment to it.",
-#                                inline=False)
-#         embed_events.add_field(name="!pride [link] [comment (optional)]",
-#                                value="Please go to #pride-2019 to use this command. If you'd like to submit via internet link, make sure you right click"
-#                                      " the image and select 'copy image location' and submit that URL using"
-#                                      " the !pride command.",
-#                                inline=False)
-#         try:
-#             await self.bot.send_message(ctx.message.author, embed=embed_events)
-#         except discord.Forbidden:
-#             message = await self.commandError(
-#                 "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
-#                 ctx.message.channel)
-#             await asyncio.sleep(5)
-#             await self.bot.delete_message(message)
+    @help.command(name="events", pass_context=True)
+    async def _events(self, ctx):
+        embed_events = discord.Embed(title="Events",
+                                     description="All commands related to HildaCord's current events",
+                                     color=0x90BDD4)
+        embed_events.add_field(name="!pride",
+                               value="Please go to #submissions to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                     "into discord and add '!inktober [comment (optional)]' as a comment to it.",
+                               inline=False)
+        embed_events.add_field(name="!inktober [link] [comment (optional)]",
+                               value="Please go to #submissions to use this command. If you'd like to submit via internet link, make sure you right click"
+                                     " the image and select 'copy image location' and submit that URL using"
+                                     " the !inktober command.",
+                               inline=False)
+        try:
+            await self.bot.send_message(ctx.message.author, embed=embed_events)
+        except discord.Forbidden:
+            message = await self.commandError(
+                "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
+                ctx.message.channel)
+            await asyncio.sleep(5)
+            await self.bot.delete_message(message)
 
 
     @commands.has_role("Staff")
@@ -1009,7 +1022,7 @@ class Submission:
                             inline=False)
         await self.bot.send_message(ctx.message.channel, embed=embed)
 
-    async def submitLinktoDB(self, user, link, message_id, comments, xp_gained, pride: bool = False):
+    async def submitLinktoDB(self, user, link, message_id, comments, xp_gained, event_id: int = False):
         try:
             new_content = Content()
             new_content.user = user
@@ -1019,41 +1032,26 @@ class Submission:
             new_content.message_id = message_id
             new_content.comment = comments
             new_content.xpfromcontent = xp_gained
-            if pride:
-                new_content.pride = True
+            if event_id:
+                new_content.event_id = event_id
             self.session.add(new_content)
             self.session.commit()
             logger.success("added content to db")
         except Exception as e:
             logger.error(e)
 
-    async def normalSubmit(self, message, userToUpdate, comment, pride: bool = False):
-        """
-
-        :param message: discord message object
-        :param userToUpdate: discord author object
-        :param comment: extracted comment from !submit
-        :return:
-        """
+    async def normalSubmit(self, message, userToUpdate, comment, event_id: int = False):
         logger.debug('submitting for ' + str(userToUpdate.name))
         jsonstr = json.dumps(message.attachments[0])
         jsondict = json.loads(jsonstr)
         url = jsondict['url']
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        if pride:
-            await self.handleSubmit(message, userToUpdate, url, comment, pride)
+        if isinstance(event_id, int):
+            await self.handleSubmit(message, userToUpdate, url, comment, event_id)
         else:
             await self.handleSubmit(message, userToUpdate, url, comment)
 
-    async def handleSubmit(self, message, userToUpdate, url, comment, pride=False):
-        """
-
-        :param message: discord message object
-        :param userToUpdate: discord user object
-        :param url: discord CDN url
-        :param comment: extracted comment from command
-        :return:
-        """
+    async def handleSubmit(self, message, userToUpdate, url, comment, event_id: int = False):
         curdate = datetime.utcnow()
         potentialstreak = curdate + timedelta(days=7)
         today = "{0}-{1}-{2}".format(curdate.month, curdate.day, curdate.year)
@@ -1067,18 +1065,22 @@ class Submission:
 
         if (db_user == None):
             await self.bot.send_message(message.channel,
-                                      "```diff\n- I couldn't find your name in our spreadsheet. Are you sure you're registered? If you are, contact an admin immediately.\n```")
+                                      "```diff\n- I couldn't find your name in our datavase. Are you sure you're registered? If you are, contact an admin immediately.\n```")
         else:
             # db_user is our member object
             # check if already submitted
-            if db_user.submitted == 1 and pride == False:
+            if db_user.submitted == 1 and event_id == False:
                 logger.error(str(userToUpdate.name) + ' already submitted')
                 await self.bot.send_message(message.channel,
                                           "```diff\n- You seem to have submitted something today already!\n```")
-            elif db_user.pridesubmitted == 1 and pride == True:
-                logger.error(str(userToUpdate.name) + ' already submitted [pride event]')
+            elif db_user.special_event_submitted == 1 and isinstance(event_id, int):
+                event = self.session.query(SpecialEvents).filter(id=event_id).one_or_none()
+                if event is None:
+                    logger.error(f'That Event ID is not in the database... Check your code: {event_id}')
+                    return
+                logger.error(str(userToUpdate.name) + f' already submitted [{event.name} event]')
                 await self.bot.send_message(message.channel,
-                                            "```diff\n- You seem to have already submitted something for the Pride event today!\n```")
+                                            f"```diff\n- You seem to have already submitted something for the {event.name} event today!\n```")
             # otherwise, do the submit
             else:
                 # update all the stats
@@ -1113,14 +1115,14 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if pride:
-                    db_user.pridesubmitted = int(self.auth.get('discord', 'LIVE'))
+                if isinstance(event_id, int):
+                    db_user.special_event_submitted = int(self.auth.get('discord', 'LIVE'))
                 else:
                     db_user.submitted = int(self.auth.get('discord', 'LIVE'))
                 db_user.expiry = potentialstreak
                 # and push all cells to the database
                 self.session.commit()
-                await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id), comments=comment, xp_gained=xp_gained, pride=pride)
+                await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id), comments=comment, xp_gained=xp_gained, event_id=event_id)
                 logger.success("finishing updating " + db_user.name + "'s stats")
                 await self.updateRole(db_user.level, message)
                 await self.bot.send_message(message.channel,
@@ -1138,7 +1140,7 @@ class Submission:
         # reset all member's submitted status
         stmt = update(User).values(submitted=False)
         self.session.execute(stmt)
-        stmt1 = update(User).values(pridesubmitted=False)
+        stmt1 = update(User).values(special_event_submitted=False)
         self.session.execute(stmt1)
 
         self.session.commit()
@@ -1186,7 +1188,7 @@ class Submission:
         self.session.commit()
         logger.success("housekeeping finished")
         await self.bot.send_message(self.bot.get_channel("495034452422950915"),
-                              "Housekeeping has finished running. You may now !submit and !pride again!")
+                              "Housekeeping has finished running. You may now !submit and !inktober again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
@@ -1372,7 +1374,8 @@ class Submission:
     async def getUserStats(self, db_user):
         stats = {"user_name": db_user.name,
                  "total_submissions": db_user.totalsubmissions,
-                 "total_pride_submissions": self.session.query(Content).filter(and_(Content.user == db_user.name, Content.pride == True)).count(),
+                 "total_pride_submissions": self.session.query(Content).filter(and_(Content.user == db_user.name, Content.event_id == 1)).count(),
+                 "total_inktober_submissions": self.session.query(Content).filter(and_(Content.user == db_user.name, Content.event_id == 2)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
@@ -1465,6 +1468,8 @@ class Submission:
         :param ctx:
         :return:
         """
+        if ctx.message.server.id == "553739065074253834":
+            return True
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         if ctx.message.channel.id in self.approvedChannels:
             return True

@@ -9,3 +9,5 @@ python-dateutil
 beautifulsoup4==4.7.1
 GitPython==2.1.11
 sqlalchemy-migrate==0.12.0
+alembic==1.2.1
+requests

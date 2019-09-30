@@ -20,7 +20,7 @@ class User(Base):
     streak = Column(Integer, nullable=False)
     expiry = Column(Date, nullable=False)
     submitted = Column(Boolean, nullable=False)
-    pridesubmitted = Column(Boolean, nullable=False)
+    special_event_submitted = Column(Boolean, nullable=False)
     raffle = Column(Boolean, nullable=False)
     promptsadded = Column(Integer, nullable=False)
     totalsubmissions = Column(Integer, nullable=False)
@@ -30,6 +30,7 @@ class User(Base):
     decaywarning = Column(Boolean, nullable=False)
     levelnotification = Column(Boolean, nullable=False, default=True)
     xptime = Column(Float, nullable=False)
+
 
 class Content(Base):
     __tablename__ = 'content'
@@ -41,8 +42,13 @@ class Content(Base):
     score = Column(Integer, default=0, nullable=False)
     comment = Column(String, nullable=False, default="")
     xpfromcontent = Column(Integer, nullable=False)
-    pride = Column(Boolean, default=False)
-    
+    event_id = Column(Integer)
+
+
+class SpecialEvents(Base):
+    __tablename__ = 'special_events'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
 
  
 # Create an engine that stores data in the local directory's
