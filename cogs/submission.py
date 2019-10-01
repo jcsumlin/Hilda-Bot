@@ -663,7 +663,7 @@ class Submission:
                 return
             remove = self.removeDBSubmission(messageID)
             if remove is True:
-                db_user = await self.getDBUserbyUsername(submission.user)
+                db_user = await self.getDBUserbyUserID(submission.user)
                 newscore = db_user.totalsubmissions - 1
                 newcurrency = db_user.currency - 10
                 current_streak = db_user.streak
