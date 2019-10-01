@@ -264,7 +264,7 @@ class Submission:
 
     @commands.command(pass_context=True)
     async def inktober(self, ctx):
-        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id == "553739065074253834":
+        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[10:].lstrip(" ")
@@ -272,14 +272,20 @@ class Submission:
                     comment = ""
                 else:
                     comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-                await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+                try:
+                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+                except:
+                    await self.commandError(
+                        "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
+                        ctx.message.channel)
             else:
                 try:
                     # normal submit.
                     comment = ctx.message.content[7:].lstrip(" ")
                     await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
                 except:
-                    logger.error(f"error preforming a normal submit for {ctx.message.author.name}")
+                    await self.commandError("You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
+                                            ctx.message.channel)
                     pass
         else:
             await self.commandError("Please go to <#618966371350609950> to use this command", ctx.message.channel)
