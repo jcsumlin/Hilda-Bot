@@ -282,7 +282,7 @@ class Submission:
                     logger.error(f"error preforming a normal submit for {ctx.message.author.name}")
                     pass
         else:
-            await self.commandError("Please go to #submissions to use this command", ctx.message.channel)
+            await self.commandError("Please go to <#618966371350609950> to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
@@ -805,12 +805,12 @@ class Submission:
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
             embed_events.add_field(name="!inktober",
-                                    value="Please go to #submissions to use this command. To submit "
+                                    value="Please go to <#618966371350609950> to use this command. To submit "
                                           "content, drag and drop the file (.png, .gif, .jpg) "
                                           "into discord and add '!inktober [comment (optional)]' as a comment to it.",
                                     inline=False)
             embed_events.add_field(name="!inktober [link] [comment (optional)]",
-                                    value="Please go to #submissions to use this command. "
+                                    value="Please go to <#618966371350609950> to use this command. "
                                           "If you'd like to submit via internet link, make sure you right click"
                                           " the image and select 'copy image location' and submit that URL using"
                                           " the !inktober command.",
@@ -934,11 +934,11 @@ class Submission:
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
         embed_events.add_field(name="!inktober",
-                               value="Please go to #submissions to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                               value="Please go to <#618966371350609950> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
                                      "into discord and add '!inktober [comment (optional)]' as a comment to it.",
                                inline=False)
         embed_events.add_field(name="!inktober [link] [comment (optional)]",
-                               value="Please go to #submissions to use this command. If you'd like to submit via internet link, make sure you right click"
+                               value="Please go to <#618966371350609950> to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
                                      " the !inktober command.",
                                inline=False)
