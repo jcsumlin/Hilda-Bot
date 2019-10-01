@@ -669,7 +669,8 @@ class Submission:
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
                 if isinstance(submission.event_id, int):
-                    if self.session.query(SpecialEvents).filter(id=submission.event_id).one_or_none() is not None:
+                    event = self.session.query(SpecialEvents).filter_by(id=submission.event_id).one_or_none()
+                    if event is not None:
                         db_user.special_event_submitted = False
                 else:
                     db_user.submitted = False
@@ -1476,7 +1477,7 @@ class Submission:
         :param ctx:
         :return:
         """
-        if ctx.message.server.id == "553739065074253834":
+        if ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
             return True
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         if ctx.message.channel.id in self.approvedChannels:
