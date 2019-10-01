@@ -1164,10 +1164,10 @@ class Submission:
                                                 userToUpdate.name, xp_gained))
 
     @commands.has_role("Staff")
-    @commands.group(name="housekeeing", pass_context=True)
+    @commands.group(name="housekeeping", pass_context=True)
     async def housekeeing(self, ctx):
         try:
-            await self.housekeeing()
+            await self.housekeeper()
             await self.commandSuccess("House keeping completed!", ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
