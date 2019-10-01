@@ -50,6 +50,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
+        self.testServerIds = ['553739065074253834', '593887030216228973'] #Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -276,7 +277,7 @@ class Submission:
 
     @commands.command(pass_context=True)
     async def inktober(self, ctx):
-        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
+        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id in self.testServerIds:
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[10:].lstrip(" ")
@@ -663,7 +664,7 @@ class Submission:
                 return
             remove = self.removeDBSubmission(messageID)
             if remove is True:
-                db_user = await self.getDBUserbyUserID(submission.user)
+                db_user = await self.getDBUser(submission.user.id)
                 newscore = db_user.totalsubmissions - 1
                 newcurrency = db_user.currency - 10
                 current_streak = db_user.streak
@@ -1162,6 +1163,15 @@ class Submission:
                                             "```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
                                                 userToUpdate.name, xp_gained))
 
+    @commands.has_role("Staff")
+    @commands.group(name="housekeeing", pass_context=True)
+    async def housekeeing(self, ctx):
+        try:
+            await self.housekeeing()
+            await self.commandSuccess("House keeping completed!", ctx.message.channel)
+        except Exception as e:
+            await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
+
     async def housekeeper(self):
         curdate = datetime.utcnow()
         today = "{0}-{1}-{2}".format(curdate.month, curdate.day, curdate.year)
@@ -1518,7 +1528,7 @@ class Submission:
         :param ctx:
         :return:
         """
-        if ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
+        if ctx.message.server.id in self.testServerIds:
             return True
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         if ctx.message.channel.id in self.approvedChannels:
