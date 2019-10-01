@@ -281,7 +281,7 @@ class Submission:
             else:
                 try:
                     # normal submit.
-                    comment = ctx.message.content[7:].lstrip(" ")
+                    comment = ctx.message.content[10:].lstrip(" ")
                     await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
                 except:
                     await self.commandError("You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
