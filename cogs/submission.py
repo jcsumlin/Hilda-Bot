@@ -279,6 +279,7 @@ class Submission:
                     comment = ctx.message.content[7:].lstrip(" ")
                     await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
                 except:
+                    logger.error(f"error preforming a normal submit for {ctx.message.author.name}")
                     pass
         else:
             await self.commandError("Please go to #submissions to use this command", ctx.message.channel)
@@ -822,7 +823,7 @@ class Submission:
                     await self.bot.send_message(ctx.message.author, embed=embed_admin)
                 await self.bot.send_message(ctx.message.author, embed=embed_xp)
                 await self.bot.send_message(ctx.message.author, embed=embed_content)
-#                 await self.bot.send_message(ctx.message.author, embed=embed_events)
+                await self.bot.send_message(ctx.message.author, embed=embed_events)
             except discord.Forbidden:
                 message = await self.commandError("Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)", ctx.message.channel)
                 await asyncio.sleep(5)
