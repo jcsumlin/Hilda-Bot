@@ -275,17 +275,13 @@ class Submission:
                 try:
                     await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=2)
                 except:
-                    await self.commandError(
-                        "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
-                        ctx.message.channel)
+                    pass
             else:
                 try:
                     # normal submit.
                     comment = ctx.message.content[10:].lstrip(" ")
                     await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
                 except:
-                    await self.commandError("You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
-                                            ctx.message.channel)
                     pass
         else:
             await self.commandError("Please go to <#618966371350609950> to use this command", ctx.message.channel)
@@ -1049,9 +1045,14 @@ class Submission:
 
     async def normalSubmit(self, message, userToUpdate, comment, event_id: int = False):
         logger.debug('submitting for ' + str(userToUpdate.name))
-        jsonstr = json.dumps(message.attachments[0])
-        jsondict = json.loads(jsonstr)
-        url = jsondict['url']
+        try:
+            jsonstr = json.dumps(message.attachments[0])
+            jsondict = json.loads(jsonstr)
+            url = jsondict['url']
+        except:
+            await self.commandError(
+                "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
+                message.channel)
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
         if isinstance(event_id, int):
             await self.handleSubmit(message, userToUpdate, url, comment, event_id)
