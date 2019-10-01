@@ -1167,12 +1167,12 @@ class Submission:
     @commands.group(name="housekeeping", pass_context=True)
     async def housekeeing(self, ctx):
         try:
-            await self.housekeeper()
-            await self.commandSuccess("House keeping completed!", ctx.message.channel)
+            await self.housekeeper(manual=True)
+            await self.commandSuccess("Manual housekeeping completed!", ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
 
-    async def housekeeper(self):
+    async def housekeeper(self, manual=False):
         curdate = datetime.utcnow()
         today = "{0}-{1}-{2}".format(curdate.month, curdate.day, curdate.year)
 
@@ -1230,8 +1230,9 @@ class Submission:
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        await self.bot.send_message(self.bot.get_channel("495034452422950915"),
-                                    "Housekeeping has finished running. You may now !submit and !inktober again!")
+        if not manual:
+            await self.bot.send_message(self.bot.get_channel("495034452422950915"),
+                                        "Housekeeping has finished running. You may now !submit and !inktober again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
