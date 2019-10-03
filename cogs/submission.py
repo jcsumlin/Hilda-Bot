@@ -1079,7 +1079,7 @@ class Submission:
                 "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
                 message.channel)
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        if isinstance(event_id, int):
+        if isinstance(event_id, int) and event_id is not False:
             await self.handleSubmit(message, userToUpdate, url, comment, event_id)
         else:
             await self.handleSubmit(message, userToUpdate, url, comment)
@@ -1092,7 +1092,7 @@ class Submission:
         logger.debug('getting filepath to download for ' + str(userToUpdate.name))
 
         # try to find user in database using id
-        db_user = await self.getDBUser(userToUpdate.id)
+        db_user = await self.getDBUser(str(userToUpdate.id))
 
         # first find if we have  the user in our list
 
@@ -1148,7 +1148,7 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if isinstance(event_id, int):
+                if isinstance(event_id, int) and event_id is not False:
                     db_user.special_event_submitted = int(self.auth.get('discord', 'LIVE'))
                 else:
                     db_user.submitted = int(self.auth.get('discord', 'LIVE'))
