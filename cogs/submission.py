@@ -50,7 +50,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
-        self.testServerIds = ['553739065074253834', '593887030216228973'] #Always allow commands here
+        self.testServerIds = ['553739065074253834', '593887030216228973']  # Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
