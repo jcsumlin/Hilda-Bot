@@ -50,7 +50,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
-        self.testServerIds = ['553739065074253834', '593887030216228973']  # Always allow commands here
+        self.testServerIds = ['553739065074253834', '593887030216228973'] #Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -114,7 +114,7 @@ class Submission:
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.content.startswith('!') == False and message.channel.id not in self.bannedXPChannels:
+        if message.content.startswith('!') == False and str(message.channel.id) not in self.bannedXPChannels or str(message.server.id) in self.testServerIds:
             # If this message is not a command and is not in the list of channels users CANNOT gain XP from chatting
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
@@ -204,7 +204,7 @@ class Submission:
         url_pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
         url = re.search(url_pattern, message.content.lower()).group(0)
         logger.debug('link submitting for ' + str(userToUpdate.name))
-        logger.debug(str(userToUpdate.name) + "'s url - " + url[1])
+        logger.debug(str(userToUpdate.name) + "'s url - " + url)
         await self.handleSubmit(message, userToUpdate, url, comment, event_id=event_id)
 
     @commands.cooldown(1, 90, commands.BucketType.server)
@@ -524,12 +524,25 @@ class Submission:
         # add a new user if there's no registered user
         if (db_user == None):
             # create new user object
-            new_user = User(name=message.author.name, server_id=str(message.server.id), level=1,
-                            id=message.author.id, startdate=curdate, currency=0,
-                            streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
-                            totalsubmissions=0, currentxp=0, adores=0, highscore=0, decaywarning=True,
+            new_user = User(name=message.author.name,
+                            server_id=str(message.server.id),
+                            level=1,
+                            id=message.author.id,
+                            startdate=curdate,
+                            currency=0,
+                            streak=0,
+                            expiry=curdate,
+                            submitted=False,
+                            raffle=False,
+                            promptsadded=0,
+                            totalsubmissions=0,
+                            currentxp=0,
+                            adores=0,
+                            highscore=0,
+                            decaywarning=True,
                             levelnotification=True,
-                            xptime=(datetime.utcnow() - self.epoch).total_seconds(), special_event_submitted=False)
+                            xptime=(datetime.utcnow() - self.epoch).total_seconds(),
+                            special_event_submitted=False)
             # add to session
             self.session.add(new_user)
             # # give relevant roles
@@ -690,10 +703,12 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if isinstance(submission.event_id, int):
+                if isinstance(submission.event_id, int) and submission.event_id is not None and submission.id >= 1:
                     event = self.session.query(SpecialEvents).filter_by(id=submission.event_id).one_or_none()
                     if event is not None:
                         db_user.special_event_submitted = False
+                    else:
+                        logger.warning("Could not find that event in the database!")
                 else:
                     db_user.submitted = False
                 # and push all cells to the database
@@ -728,7 +743,7 @@ class Submission:
                 if db_user.levelnotification != False:
                     await self.commandSuccess(
                         f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
-                        'To turn off this notification do !levelwarning off in any channel.',
+                        'To turn off this notification do !levelwarning off in the designated bot channels.',
                         message.author)
                     return
             else:
@@ -1060,7 +1075,7 @@ class Submission:
             new_content.message_id = message_id
             new_content.comment = comments
             new_content.xpfromcontent = xp_gained
-            if isinstance(event_id, int):
+            if isinstance(event_id, int) and event_id is not False and event_id >= 1:
                 new_content.event_id = event_id
             self.session.add(new_content)
             self.session.commit()
@@ -1079,7 +1094,7 @@ class Submission:
                 "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
                 message.channel)
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        if isinstance(event_id, int) and event_id is not False:
+        if isinstance(event_id, int) and event_id is not False and event_id >= 1:
             await self.handleSubmit(message, userToUpdate, url, comment, event_id)
         else:
             await self.handleSubmit(message, userToUpdate, url, comment)
@@ -1092,7 +1107,7 @@ class Submission:
         logger.debug('getting filepath to download for ' + str(userToUpdate.name))
 
         # try to find user in database using id
-        db_user = await self.getDBUser(str(userToUpdate.id))
+        db_user = await self.getDBUser(userToUpdate.id)
 
         # first find if we have  the user in our list
 
@@ -1102,12 +1117,12 @@ class Submission:
         else:
             # db_user is our member object
             # check if already submitted
-            if db_user.submitted == 1 and event_id == False:
+            if db_user.submitted is True and event_id == False:
                 logger.error(str(userToUpdate.name) + ' already submitted')
                 await self.bot.send_message(message.channel,
                                             "```diff\n- You seem to have submitted something today already!\n```")
-            elif db_user.special_event_submitted == 1 and isinstance(event_id, int):
-                event = self.session.query(SpecialEvents).filter(id=event_id).one_or_none()
+            elif db_user.special_event_submitted is True and isinstance(event_id, int) and event_id is not False:
+                event = self.session.query(SpecialEvents).filter_by(id=event_id).one_or_none()
                 if event is None:
                     logger.error(f'That Event ID is not in the database... Check your code: {event_id}')
                     return
@@ -1136,7 +1151,7 @@ class Submission:
                     if db_user.levelnotification == True:
                         await self.commandSuccess(
                             f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
-                            'To turn off this notification do !levelwarning off in any channel.',
+                            'To turn off this notification do !levelwarning off in the designated bot channels.',
                             userToUpdate)
                 # otherwise just increase exp
                 else:
@@ -1148,7 +1163,7 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if isinstance(event_id, int) and event_id is not False:
+                if isinstance(event_id, int) and event_id is not None and event_id >= 1:
                     db_user.special_event_submitted = int(self.auth.get('discord', 'LIVE'))
                 else:
                     db_user.submitted = int(self.auth.get('discord', 'LIVE'))
