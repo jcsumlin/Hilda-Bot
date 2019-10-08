@@ -707,6 +707,8 @@ class Submission:
                     event = self.session.query(SpecialEvents).filter_by(id=submission.event_id).one_or_none()
                     if event is not None:
                         db_user.special_event_submitted = False
+                    else:
+                        logger.warning("Could not find that event in the database!")
                 else:
                     db_user.submitted = False
                 # and push all cells to the database
@@ -1073,7 +1075,7 @@ class Submission:
             new_content.message_id = message_id
             new_content.comment = comments
             new_content.xpfromcontent = xp_gained
-            if isinstance(event_id, int) and event_id is not None and event_id >= 1:
+            if isinstance(event_id, int) and event_id is not False and event_id >= 1:
                 new_content.event_id = event_id
             self.session.add(new_content)
             self.session.commit()
@@ -1092,7 +1094,7 @@ class Submission:
                 "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
                 message.channel)
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        if isinstance(event_id, int):
+        if isinstance(event_id, int) and event_id is not False and event_id >= 1:
             await self.handleSubmit(message, userToUpdate, url, comment, event_id)
         else:
             await self.handleSubmit(message, userToUpdate, url, comment)
@@ -1120,7 +1122,7 @@ class Submission:
                 await self.bot.send_message(message.channel,
                                             "```diff\n- You seem to have submitted something today already!\n```")
             elif db_user.special_event_submitted is True and isinstance(event_id, int) and event_id is not False:
-                event = self.session.query(SpecialEvents).filter(id=event_id).one_or_none()
+                event = self.session.query(SpecialEvents).filter_by(id=event_id).one_or_none()
                 if event is None:
                     logger.error(f'That Event ID is not in the database... Check your code: {event_id}')
                     return
