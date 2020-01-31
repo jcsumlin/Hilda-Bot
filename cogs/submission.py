@@ -76,7 +76,7 @@ class Submission:
         sent_message = await self.bot.send_message(channel, embed=embed)
         return sent_message
 
-    async def commandSuccess(self, title, desc, channel):
+    async def commandSuccess(self, title, channel, desc=""):
         embed = discord.Embed(title=title, description=desc, color=0x00df00)
         await self.bot.send_message(channel, embed=embed)
 
@@ -132,8 +132,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 # <:HildaNice:554394104117723136>
                 if reaction.emoji.id == '554394104117723136' and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith(
-                    "!inktober")):
+                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!FFCE")):
                     # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -161,8 +160,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 if reaction.emoji.id == '554394104117723136' and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith(
-                    "!inktober")):
+                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!FFCE")):
                     # logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -183,7 +181,7 @@ class Submission:
         db_user = None  # return none if we can't find a user
         if userID != "426541567092850703" and userID != "525814724567367682":
             try:  # try to find user in database using id
-                db_user = self.session.query(User).filter(User.id == userID).one()
+                db_user = self.session.query(User).filter_by(id=userID).one_or_none()
             except sqlalchemy.orm.exc.NoResultFound:
                 logger.error(f'No user found, probably not registered {userID}')
             except sqlalchemy.orm.exc.MultipleResultsFound:
@@ -276,28 +274,28 @@ class Submission:
                     pass
 
     @commands.command(pass_context=True)
-    async def inktober(self, ctx):
-        if ctx.message.channel.id == "618966371350609950" or ctx.message.server.id in self.testServerIds:
+    async def FFCE(self, ctx):
+        if ctx.message.channel.id == "670472297504833546" or ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
-                message = ctx.message.content[10:].lstrip(" ")
+                message = ctx.message.content[6:].lstrip(" ")
                 if message.startswith('https://') or message.startswith('http://'):
                     comment = ""
                 else:
                     comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
                 try:
-                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=3)
                 except:
                     pass
             else:
                 try:
                     # normal submit.
-                    comment = ctx.message.content[10:].lstrip(" ")
-                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=2)
+                    comment = ctx.message.content[6:].lstrip(" ")
+                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=3)
                 except:
                     pass
         else:
-            await self.commandError("Please go to <#618966371350609950> to use this command", ctx.message.channel)
+            await self.commandError("Please go to <#670472297504833546> to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
@@ -412,12 +410,17 @@ class Submission:
                     stats_embed.add_field(name=":pen_fountain: Inktober Event 2019 :pen_fountain:",
                                           value=f"    **Submits**: {stats['total_inktober_submissions']}",
                                           inline=False)
+                if stats['total_ffce_submissions'] > 0:
+                    stats_embed.add_field(
+                        name="<a:blobdance:569473285436211210> FFCE Event 2020 <a:blobdance:569473285436211210>",
+                        value=f"    **Submits**: {stats['total_ffce_submissions']}",
+                        inline=False)
                     if db_user.special_event_submitted is True:
                         submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
                     else:
                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
-                    stats_embed.add_field(name="Inktober Event Submit Status", value=submit_status, inline=True)
+                    stats_embed.add_field(name="FFCE Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -556,6 +559,7 @@ class Submission:
             # else:
             #     await self.bot.add_roles(user, role)
 
+
             # for rank in serv.roles:
             #     if rank.name == "Artists":
             #         await self.bot.add_roles(ctx.message.author, rank)
@@ -603,7 +607,7 @@ class Submission:
                 self.session.commit()
                 logger.success(f"{ctx.message.author.name} reset {receiver.name}'s stats")
                 await self.bot.send_message(ctx.message.channel,
-                                            "```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
+                                          "```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
             except:
                 await self.bot.send_message(ctx.message.channel, "```Markdown\n#Something went wrong.\n```")
                 self.session.rollback()
@@ -742,9 +746,9 @@ class Submission:
                 self.session.commit()
                 if db_user.levelnotification != False:
                     await self.commandSuccess(
-                        f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
-                        'To turn off this notification do !levelwarning off in the designated bot channels.',
-                        message.author)
+                        title= f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
+                        desc='To turn off this notification do !levelwarning off in the designated bot channels.',
+                        channel=message.author)
                     return
             else:
                 await self.checkLevelRole(message, db_user.level)
@@ -845,16 +849,16 @@ class Submission:
             embed_events = discord.Embed(title="Events",
                                          description="All commands related to HildaCord's current events",
                                          color=0x90BDD4)
-            embed_events.add_field(name="!inktober",
-                                   value="Please go to <#618966371350609950> to use this command. To submit "
+            embed_events.add_field(name="!FFCE",
+                                   value="Please go to <#670472297504833546> to use this command. To submit "
                                          "content, drag and drop the file (.png, .gif, .jpg) "
-                                         "into discord and add '!inktober [comment (optional)]' as a comment to it.",
+                                         "into discord and add '!FFCE [comment (optional)]' as a comment to it.",
                                    inline=False)
-            embed_events.add_field(name="!inktober [link] [comment (optional)]",
-                                   value="Please go to <#618966371350609950> to use this command. "
+            embed_events.add_field(name="!FFCE [link] [comment (optional)]",
+                                   value="Please go to <#670472297504833546> to use this command. "
                                          "If you'd like to submit via internet link, make sure you right click"
                                          " the image and select 'copy image location' and submit that URL using"
-                                         " the !inktober command.",
+                                         " the !FFCE command.",
                                    inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
@@ -976,14 +980,14 @@ class Submission:
         embed_events = discord.Embed(title="Events",
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
-        embed_events.add_field(name="!inktober",
-                               value="Please go to <#618966371350609950> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!inktober [comment (optional)]' as a comment to it.",
+        embed_events.add_field(name="!FFCE",
+                               value="Please go to <#670472297504833546> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                     "into discord and add '!FFCE [comment (optional)]' as a comment to it.",
                                inline=False)
-        embed_events.add_field(name="!inktober [link] [comment (optional)]",
-                               value="Please go to <#618966371350609950> to use this command. If you'd like to submit via internet link, make sure you right click"
+        embed_events.add_field(name="!FFCE [link] [comment (optional)]",
+                               value="Please go to <#670472297504833546> to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
-                                     " the !inktober command.",
+                                     " the !FFCE command.",
                                inline=False)
         try:
             await self.bot.send_message(ctx.message.author, embed=embed_events)
@@ -1023,9 +1027,9 @@ class Submission:
             self.bannedXPChannels.append(channel_id)
             try:
                 dataIO.save_json("data/xp/banned_channels.json", self.bannedXPChannels)
-                await self.commandSuccess("Success!",
-                                          f"Successfully added channel {channel.name} to banned list! Users will no longer gain XP from chatting here!",
-                                          ctx.message.channel)
+                await self.commandSuccess(title="Success!",
+                                          desc=f"Successfully added channel {channel.name} to banned list! Users will no longer gain XP from chatting here!",
+                                          channel=ctx.message.channel)
             except:
                 await self.commandError("Error while saving channel to file!!",
                                         ctx.message.channel)
@@ -1111,7 +1115,7 @@ class Submission:
 
         # first find if we have  the user in our list
 
-        if (db_user == None):
+        if db_user is None:
             await self.bot.send_message(message.channel,
                                         "```diff\n- I couldn't find your name in our datavase. Are you sure you're registered? If you are, contact an admin immediately.\n```")
         else:
@@ -1132,6 +1136,7 @@ class Submission:
             # otherwise, do the submit
             else:
                 # update all the stats
+                print("getting here")
                 newscore = db_user.totalsubmissions + 1
                 newcurrency = db_user.currency + 10
                 new_streak = int(db_user.streak) + 1
@@ -1150,9 +1155,9 @@ class Submission:
                     server_id = message.server.id
                     if db_user.levelnotification == True:
                         await self.commandSuccess(
-                            f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
-                            'To turn off this notification do !levelwarning off in the designated bot channels.',
-                            userToUpdate)
+                            title=f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
+                            desc='To turn off this notification do !levelwarning off in the designated bot channels.',
+                            channel=userToUpdate)
                 # otherwise just increase exp
                 else:
                     db_user.currentxp = str(new_xp_total)
@@ -1183,7 +1188,7 @@ class Submission:
     async def housekeeing(self, ctx):
         try:
             await self.housekeeper(manual=True)
-            await self.commandSuccess("Manual housekeeping completed!", ctx.message.channel)
+            await self.commandSuccess(title="Manual housekeeping completed!", desc="Users can now submit again :)", channel=ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
 
@@ -1444,6 +1449,8 @@ class Submission:
                      and_(Content.user == db_user.name, Content.event_id == 1)).count(),
                  "total_inktober_submissions": self.session.query(Content).filter(
                      and_(Content.user == db_user.id, Content.event_id == 2)).count(),
+                 "total_ffce_submissions": self.session.query(Content).filter(
+                     and_(Content.user == db_user.id, Content.event_id == 3)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
