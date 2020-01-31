@@ -746,9 +746,9 @@ class Submission:
                 self.session.commit()
                 if db_user.levelnotification != False:
                     await self.commandSuccess(
-                        f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
-                        'To turn off this notification do !levelwarning off in the designated bot channels.',
-                        message.author)
+                        title= f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
+                        desc='To turn off this notification do !levelwarning off in the designated bot channels.',
+                        channel=message.author)
                     return
             else:
                 await self.checkLevelRole(message, db_user.level)
@@ -1027,9 +1027,9 @@ class Submission:
             self.bannedXPChannels.append(channel_id)
             try:
                 dataIO.save_json("data/xp/banned_channels.json", self.bannedXPChannels)
-                await self.commandSuccess("Success!",
-                                          f"Successfully added channel {channel.name} to banned list! Users will no longer gain XP from chatting here!",
-                                          ctx.message.channel)
+                await self.commandSuccess(title="Success!",
+                                          desc=f"Successfully added channel {channel.name} to banned list! Users will no longer gain XP from chatting here!",
+                                          channel=ctx.message.channel)
             except:
                 await self.commandError("Error while saving channel to file!!",
                                         ctx.message.channel)
@@ -1155,9 +1155,9 @@ class Submission:
                     server_id = message.server.id
                     if db_user.levelnotification == True:
                         await self.commandSuccess(
-                            f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
-                            'To turn off this notification do !levelwarning off in the designated bot channels.',
-                            userToUpdate)
+                            title=f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
+                            desc='To turn off this notification do !levelwarning off in the designated bot channels.',
+                            channel=userToUpdate)
                 # otherwise just increase exp
                 else:
                     db_user.currentxp = str(new_xp_total)
@@ -1188,7 +1188,7 @@ class Submission:
     async def housekeeing(self, ctx):
         try:
             await self.housekeeper(manual=True)
-            await self.commandSuccess("Manual housekeeping completed!", desc="Users can now submit again :)", channel=ctx.message.channel)
+            await self.commandSuccess(title="Manual housekeeping completed!", desc="Users can now submit again :)", channel=ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
 
