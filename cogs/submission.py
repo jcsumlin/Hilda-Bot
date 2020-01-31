@@ -76,7 +76,7 @@ class Submission:
         sent_message = await self.bot.send_message(channel, embed=embed)
         return sent_message
 
-    async def commandSuccess(self, title, desc, channel):
+    async def commandSuccess(self, title, channel, desc=""):
         embed = discord.Embed(title=title, description=desc, color=0x00df00)
         await self.bot.send_message(channel, embed=embed)
 
