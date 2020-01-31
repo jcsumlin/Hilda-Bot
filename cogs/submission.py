@@ -1188,7 +1188,7 @@ class Submission:
     async def housekeeing(self, ctx):
         try:
             await self.housekeeper(manual=True)
-            await self.commandSuccess("Manual housekeeping completed!", channel=ctx.message.channel)
+            await self.commandSuccess("Manual housekeeping completed!", desc="Users can now submit again :)", channel=ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
 
