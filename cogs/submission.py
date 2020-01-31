@@ -50,6 +50,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
+        self.testServerIds = ['553739065074253834', '593887030216228973'] #Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -113,7 +114,7 @@ class Submission:
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.content.startswith('!') == False and message.channel.id not in self.bannedXPChannels:
+        if message.content.startswith('!') == False and str(message.channel.id) not in self.bannedXPChannels or str(message.server.id) in self.testServerIds:
             # If this message is not a command and is not in the list of channels users CANNOT gain XP from chatting
             db_user = await self.getDBUser(message.author.id)
             if db_user != None:
@@ -187,12 +188,12 @@ class Submission:
                 logger.error('Multiple users found, something is really broken!')
             return db_user  # this value will be None or a valid user, make sure to check
 
-    async def getDBUserbyUsername(self, username):  # gets the database user based on the user's ID
+    async def getDBUserbyUserID(self, user_id):  # gets the database user based on the user's ID
         db_user = None  # return none if we can't find a user
         try:  # try to find user in database using id
-            db_user = self.session.query(User).filter(User.name == username).one()
+            db_user = self.session.query(User).filter(User.id == user_id).one()
         except sqlalchemy.orm.exc.NoResultFound:
-            logger.error(f'No user found, probably not registered {username}')
+            logger.error(f'No user found, probably not registered {user_id}')
         except sqlalchemy.orm.exc.MultipleResultsFound:
             logger.error('Multiple users found, something is really broken!')
         return db_user  # this value will be None or a valid user, make sure t
@@ -273,12 +274,11 @@ class Submission:
                     pass
 
     @commands.command(pass_context=True)
-    async def ffce(self, ctx):
+    async def FFCE(self, ctx):
         if ctx.message.channel.id == "670472297504833546" or ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[6:].lstrip(" ")
-                print(str(message))
                 if message.startswith('https://') or message.startswith('http://'):
                     comment = ""
                 else:
@@ -527,12 +527,25 @@ class Submission:
         # add a new user if there's no registered user
         if (db_user == None):
             # create new user object
-            new_user = User(name=message.author.name, server_id=str(message.server.id), level=1,
-                            id=message.author.id, startdate=curdate, currency=0,
-                            streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
-                            totalsubmissions=0, currentxp=0, adores=0, highscore=0, decaywarning=True,
+            new_user = User(name=message.author.name,
+                            server_id=str(message.server.id),
+                            level=1,
+                            id=message.author.id,
+                            startdate=curdate,
+                            currency=0,
+                            streak=0,
+                            expiry=curdate,
+                            submitted=False,
+                            raffle=False,
+                            promptsadded=0,
+                            totalsubmissions=0,
+                            currentxp=0,
+                            adores=0,
+                            highscore=0,
+                            decaywarning=True,
                             levelnotification=True,
-                            xptime=(datetime.utcnow() - self.epoch).total_seconds(), special_event_submitted=False)
+                            xptime=(datetime.utcnow() - self.epoch).total_seconds(),
+                            special_event_submitted=False)
             # add to session
             self.session.add(new_user)
             # # give relevant roles
@@ -545,6 +558,7 @@ class Submission:
             #     await self.bot.add_roles(user, role_new)
             # else:
             #     await self.bot.add_roles(user, role)
+
 
             # for rank in serv.roles:
             #     if rank.name == "Artists":
@@ -593,7 +607,7 @@ class Submission:
                 self.session.commit()
                 logger.success(f"{ctx.message.author.name} reset {receiver.name}'s stats")
                 await self.bot.send_message(ctx.message.channel,
-                                            "```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
+                                          "```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
             except:
                 await self.bot.send_message(ctx.message.channel, "```Markdown\n#Something went wrong.\n```")
                 self.session.rollback()
@@ -667,7 +681,7 @@ class Submission:
                 return
             remove = self.removeDBSubmission(messageID)
             if remove is True:
-                db_user = await self.getDBUserbyUsername(submission.user)
+                db_user = await self.getDBUser(submission.user.id)
                 newscore = db_user.totalsubmissions - 1
                 newcurrency = db_user.currency - 10
                 current_streak = db_user.streak
@@ -693,9 +707,12 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if isinstance(submission.event_id, int):
-                    if self.session.query(SpecialEvents).filter(id=submission.event_id).one_or_none() is not None:
+                if isinstance(submission.event_id, int) and submission.event_id is not None and submission.id >= 1:
+                    event = self.session.query(SpecialEvents).filter_by(id=submission.event_id).one_or_none()
+                    if event is not None:
                         db_user.special_event_submitted = False
+                    else:
+                        logger.warning("Could not find that event in the database!")
                 else:
                     db_user.submitted = False
                 # and push all cells to the database
@@ -730,7 +747,7 @@ class Submission:
                 if db_user.levelnotification != False:
                     await self.commandSuccess(
                         f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
-                        'To turn off this notification do !levelwarning off in any channel.',
+                        'To turn off this notification do !levelwarning off in the designated bot channels.',
                         message.author)
                     return
             else:
@@ -1055,14 +1072,14 @@ class Submission:
     async def submitLinktoDB(self, user, link, message_id, comments, xp_gained, event_id: int = False):
         try:
             new_content = Content()
-            new_content.user = user
+            new_content.user = user.id
             new_content.datesubmitted = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             new_content.link = link
             new_content.score = 0
             new_content.message_id = message_id
             new_content.comment = comments
             new_content.xpfromcontent = xp_gained
-            if event_id:
+            if isinstance(event_id, int) and event_id is not False and event_id >= 1:
                 new_content.event_id = event_id
             self.session.add(new_content)
             self.session.commit()
@@ -1081,7 +1098,7 @@ class Submission:
                 "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
                 message.channel)
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
-        if isinstance(event_id, int):
+        if isinstance(event_id, int) and event_id is not False and event_id >= 1:
             await self.handleSubmit(message, userToUpdate, url, comment, event_id)
         else:
             await self.handleSubmit(message, userToUpdate, url, comment)
@@ -1104,12 +1121,12 @@ class Submission:
         else:
             # db_user is our member object
             # check if already submitted
-            if db_user.submitted == 1 and event_id == False:
+            if db_user.submitted is True and event_id == False:
                 logger.error(str(userToUpdate.name) + ' already submitted')
                 await self.bot.send_message(message.channel,
                                             "```diff\n- You seem to have submitted something today already!\n```")
-            elif db_user.special_event_submitted == 1 and isinstance(event_id, int):
-                event = self.session.query(SpecialEvents).filter(id=event_id).one_or_none()
+            elif db_user.special_event_submitted is True and isinstance(event_id, int) and event_id is not False:
+                event = self.session.query(SpecialEvents).filter_by(id=event_id).one_or_none()
                 if event is None:
                     logger.error(f'That Event ID is not in the database... Check your code: {event_id}')
                     return
@@ -1139,7 +1156,7 @@ class Submission:
                     if db_user.levelnotification == True:
                         await self.commandSuccess(
                             f'@{userToUpdate.name} Leveled Up! You are now level {str(current_level)}! :confetti_ball:',
-                            'To turn off this notification do !levelwarning off in any channel.',
+                            'To turn off this notification do !levelwarning off in the designated bot channels.',
                             userToUpdate)
                 # otherwise just increase exp
                 else:
@@ -1151,14 +1168,14 @@ class Submission:
                 db_user.totalsubmissions = newscore
                 db_user.currency = newcurrency
                 db_user.streak = new_streak
-                if isinstance(event_id, int):
+                if isinstance(event_id, int) and event_id is not None and event_id >= 1:
                     db_user.special_event_submitted = int(self.auth.get('discord', 'LIVE'))
                 else:
                     db_user.submitted = int(self.auth.get('discord', 'LIVE'))
                 db_user.expiry = potentialstreak
                 # and push all cells to the database
                 self.session.commit()
-                await self.submitLinktoDB(user=userToUpdate.name, link=url, message_id=str(message.id),
+                await self.submitLinktoDB(user=userToUpdate, link=url, message_id=str(message.id),
                                           comments=comment, xp_gained=xp_gained, event_id=event_id)
                 logger.success("finishing updating " + db_user.name + "'s stats")
                 await self.updateRole(db_user.level, message)
@@ -1166,7 +1183,16 @@ class Submission:
                                             "```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
                                                 userToUpdate.name, xp_gained))
 
-    async def housekeeper(self):
+    @commands.has_role("Staff")
+    @commands.group(name="housekeeping", pass_context=True)
+    async def housekeeing(self, ctx):
+        try:
+            await self.housekeeper(manual=True)
+            await self.commandSuccess("Manual housekeeping completed!", ctx.message.channel)
+        except Exception as e:
+            await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
+
+    async def housekeeper(self, manual=False):
         curdate = datetime.utcnow()
         today = "{0}-{1}-{2}".format(curdate.month, curdate.day, curdate.year)
 
@@ -1224,8 +1250,9 @@ class Submission:
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        await self.bot.send_message(self.bot.get_channel("495034452422950915"),
-                                    "Housekeeping has finished running. You may now !submit and !FFCE again!")
+        if not manual:
+            await self.bot.send_message(self.bot.get_channel("495034452422950915"),
+                                        "Housekeeping has finished running. You may now !submit and !inktober again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
@@ -1271,20 +1298,24 @@ class Submission:
             elif current_level >= level and current_level < levels[levels.index(level) + 1]:
                 # user needs  the role associated with level
                 logger.info("user needs the role associated with level")
+                closest_level = 0
                 try:
-                    role_name = self.auth.get('level-roles', f'lvl_{current_level}')
+                    role_name = self.auth.get('level-roles', f'lvl_{level}')
                     role_to_add = discord.utils.get(message.server.roles,
                                                     name=role_name)
+                    if role_to_add is None:
+                        logger.error(f"Role {role_name} does not exist skipping")
+                        return
                 except configparser.NoOptionError:
                     pass
 
                 higher_roles = levels[levels.index(level) + 1:]
-                logger.info(higher_roles)
                 await self.removeHigherRoles(message, higher_roles)
                 try:
                     await self.bot.add_roles(message.author, role_to_add)
+                    logger.success(f"Added {role_name} to {message.author.name} sucessfully.")
                 except NameError:
-                    logger.error(f"Hit name error while adding role, {role_to_add.name}")
+                    logger.error(f"hit name error {role_to_add} for {message.author.name}")
                     pass
                 return
 
@@ -1409,14 +1440,17 @@ class Submission:
         # logger.info(f"{role_updated}")
 
     async def getUserStats(self, db_user):
-        stats = {"user_name": db_user.name,
+        stats = {"user_id": db_user.id,
+                 "user_name": db_user.name,
                  "total_submissions": db_user.totalsubmissions,
+                 # TODO: total_pride_submissions will use the db_user.name since the
+                 #  change to storing the useIDs rather than names was made after that event
                  "total_pride_submissions": self.session.query(Content).filter(
                      and_(Content.user == db_user.name, Content.event_id == 1)).count(),
                  "total_inktober_submissions": self.session.query(Content).filter(
-                     and_(Content.user == db_user.name, Content.event_id == 2)).count(),
+                     and_(Content.user == db_user.id, Content.event_id == 2)).count(),
                  "total_ffce_submissions": self.session.query(Content).filter(
-                     and_(Content.user == db_user.name, Content.event_id == 3)).count(),
+                     and_(Content.user == db_user.id, Content.event_id == 3)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
@@ -1483,11 +1517,15 @@ class Submission:
             elif current_level < level:
                 break
         if max_level != 0:
-            role = discord.utils.get(message.server.roles, name=self.auth.get('level-roles', f'lvl_{max_level}'))
-            if role in [y.name for y in message.author.roles]:
-                return
+            role_name = self.auth.get('level-roles', f'lvl_{max_level}')
+            role = discord.utils.get(message.server.roles, name=role_name)
+            if role is not None:
+                if role in [y.name for y in message.author.roles]:
+                    return
+                else:
+                    await self.bot.add_roles(message.author, role)
             else:
-                await self.bot.add_roles(message.author, role)
+                logger.error(f"The role {role_name} does not exist skipping.")
 
     async def on_command_error(self, error, ctx):
         if isinstance(error, commands.CommandOnCooldown):
@@ -1513,7 +1551,7 @@ class Submission:
         :param ctx:
         :return:
         """
-        if ctx.message.server.id == "553739065074253834":
+        if ctx.message.server.id in self.testServerIds:
             return True
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         if ctx.message.channel.id in self.approvedChannels:

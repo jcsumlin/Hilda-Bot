@@ -50,18 +50,17 @@ class SpecialEvents(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
- 
-# Create an engine that stores data in the local directory's
-# sqlalchemy_example.db file.
-engine = create_engine('sqlite:///database.db')
- 
-# Create all tables in the engine. This is equivalent to "Create Table"
-# statements in raw SQL.
-Base.metadata.create_all(bind=engine)
-logger.success("Database file 'database.db' has been created")
+
 # moves database to correct folder for bot to function
 if __name__ == '__main__':
     try:
+        # Create an engine that stores data in the local directory's
+        # sqlalchemy_example.db file.
+        engine = create_engine('sqlite:///database.db')
+        # Create all tables in the engine. This is equivalent to "Create Table"
+        # statements in raw SQL.
+        Base.metadata.create_all(bind=engine)
+        logger.success("Database file 'database.db' has been created")
         os.rename('./database.db', './cogs/database.db')
         logger.success("database.db has been moved into the cogs folder")
     except Exception as e:
