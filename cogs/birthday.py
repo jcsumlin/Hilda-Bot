@@ -144,7 +144,6 @@ class Birthdays:
                                                        channel.server.roles)
                 member = discord.utils.find(lambda m: m.id == user['user_id'], channel.server.members)
                 if member is None:
-                    logger.error('Could not find user')
                     continue
                 if birthday.month != now.month or birthday.day != now.day and user['COMPLETE']:
                     user['COMPLETE'] = False
