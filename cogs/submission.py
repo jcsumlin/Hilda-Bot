@@ -1252,7 +1252,7 @@ class Submission:
         logger.success("housekeeping finished")
         if not manual:
             await self.bot.send_message(self.bot.get_channel("495034452422950915"),
-                                        "Housekeeping has finished running. You may now !submit and !inktober again!")
+                                        "Housekeeping has finished running. You may now !submit and !FFCE again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
