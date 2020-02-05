@@ -1136,7 +1136,6 @@ class Submission:
             # otherwise, do the submit
             else:
                 # update all the stats
-                print("getting here")
                 newscore = db_user.totalsubmissions + 1
                 newcurrency = db_user.currency + 10
                 new_streak = int(db_user.streak) + 1
@@ -1148,7 +1147,7 @@ class Submission:
                 # if we levelled up, increase level
                 if new_xp_total >= next_level_required_xp:
                     current_level = current_level + 1
-                    # self.levelUpUser(current_level, userToUpdate)
+                    await self.updateRole(current_level, message)
                     new_xp_total = new_xp_total - next_level_required_xp
                     db_user.level = int(current_level)
                     db_user.currentxp = int(new_xp_total)
@@ -1177,7 +1176,6 @@ class Submission:
                 self.session.commit()
                 await self.submitLinktoDB(user=userToUpdate, link=url, message_id=str(message.id),
                                           comments=comment, xp_gained=xp_gained, event_id=event_id)
-                logger.success("finishing updating " + db_user.name + "'s stats")
                 await self.updateRole(db_user.level, message)
                 await self.bot.send_message(message.channel,
                                             "```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
@@ -1278,166 +1276,40 @@ class Submission:
         return done  # this value will be None or a valid user, make sure to check
 
     async def updateRole(self, current_level, message: discord.Message):
-        logger.info("Checking user for role updates")
         levels = []
+        before_roles = message.author.roles
         for key in self.auth['level-roles']:
-            # logger.info(key)
             level = re.search("^lvl_(\d+)$", key)
             levels.append(int(level.group(1)))
-        if current_level < levels[0]:
-            logger.info("Users level is less than lowest in config")
-            # assign no roles and make sure they have no roles
-            await self.removeAllRoles(message)
+
+        after_roles = await self.buildAfterRoles(levels, current_level, message.server)
+        if after_roles is False:
+            logger.exception(f"Failed to update {message.author}'s roles")
             return
+        if len(after_roles) == 0:
+            return
+        for role in after_roles:
+            if role not in before_roles:
+                try:
+                    await self.bot.add_roles(message.author, role)
+                except Exception as e:
+                    logger.exception(f"Failed to add role {role.nam} to {message.author.name}: {e}")
+                    return False
+                logger.success(f"Successfully added {role.name} to {message.author.name}")
+
+
+    async def buildAfterRoles(self, levels: list, max_level: int, server):
+        after_roles = []
         for level in levels:
-            if current_level >= levels[-1]:
-                logger.info("updating roles")
-                # User has max role, just check to see if they still have the right role
-                await self.checkLevelRole(message, current_level)
-                return
-            elif current_level >= level and current_level < levels[levels.index(level) + 1]:
-                # user needs  the role associated with level
-                logger.info("user needs the role associated with level")
-                closest_level = 0
+            if max_level >= level:
                 try:
-                    role_name = self.auth.get('level-roles', f'lvl_{level}')
-                    role_to_add = discord.utils.get(message.server.roles,
-                                                    name=role_name)
-                    if role_to_add is None:
-                        logger.error(f"Role {role_name} does not exist skipping")
-                        return
-                except configparser.NoOptionError:
-                    pass
+                    role = discord.utils.get(server.roles, name=self.auth['level-roles'][f'lvl_{level}'])
+                except Exception as e:
+                    logger.exception(f"Could not get role for afterRoles list: {e}")
+                    return False
+                after_roles.append(role)
+        return after_roles
 
-                higher_roles = levels[levels.index(level) + 1:]
-                await self.removeHigherRoles(message, higher_roles)
-                try:
-                    await self.bot.add_roles(message.author, role_to_add)
-                    logger.success(f"Added {role_name} to {message.author.name} sucessfully.")
-                except NameError:
-                    logger.error(f"hit name error {role_to_add} for {message.author.name}")
-                    pass
-                return
-
-        # if current_level in levels:
-        #     logger.info("updating roles")
-        #     role = discord.utils.get(ctx.server.roles,
-        #                              name=self.auth.get('level-roles', f'lvl_{current_level}'))
-        #     if role != None:
-        #         await self.bot.add_roles(ctx.author, role)
-        #     else:
-        #         logger.error(f"Role {self.auth.get('level-roles', f'lvl_{current_level}')} does not exist on this server")
-        #         return
-        # if levels.index(current_level) != 0:
-        #     role_remove = levels[(levels.index(current_level) - 1)]
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', f'lvl_{role_remove}'))
-        #     if role_remove != None:
-        #         await self.bot.remove_roles(ctx.author, role_remove)
-        #     else:
-        #         logger.error(
-        #             f"Role to be removed does not exist on this server")
-        #         return
-
-        # role_updated = False
-        # if current_level == 3:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_3'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     await self.bot.add_roles(ctx.author, role)
-        #     role_updated = True
-        # elif current_level == 15:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_15'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_3'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        # elif current_level == 25:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_25'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_15'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        # elif current_level == 35:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_35'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_25'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 50:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_50'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_35'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 60:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_60'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_50'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 69:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_69'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_60'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 75:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_75'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_69'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 90:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_90'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_75'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # elif current_level == 100:
-        #     role = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_100'))
-        #     if role == None:
-        #         logger.error("Level Role does not exist! please check your bot config and server config")
-        #         return
-        #     role_remove = discord.utils.get(ctx.server.roles, name=self.auth.get('level-roles', 'lvl_90'))
-        #     await self.bot.add_roles(ctx.author, role)
-        #     await self.bot.remove_roles(ctx.author, role_remove)
-        #     role_updated = True
-        #
-        # else:
-        #     logger.debug("Level Not in list")
-
-        # logger.info(f"{role_updated}")
 
     async def getUserStats(self, db_user):
         stats = {"user_id": db_user.id,
@@ -1489,7 +1361,7 @@ class Submission:
         """
         if db_user != None:
             time_diff = (datetime.utcnow() - self.epoch).total_seconds() - db_user.xptime
-            if time_diff >= 30:
+            if time_diff >= 30 or self.auth['discord']['LIVE'] == 0:
                 # await self.getUserStats(db_user)
                 try:
                     db_user.xptime = (datetime.utcnow() - self.epoch).total_seconds()
