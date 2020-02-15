@@ -33,7 +33,6 @@ class Submission:
 
     def __init__(self, bot):
         self.bot = bot
-        # Bind the data type to the engine and connect to our SQL database
         engine = create_engine('sqlite:///database.db')
         Base.metadata.bind = engine
         DBSession = sessionmaker(bind=engine)
