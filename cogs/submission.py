@@ -50,7 +50,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
-        self.testServerIds = ['553739065074253834', '593887030216228973'] #Always allow commands here
+        self.testServerIds = ['553739065074253834', '593887030216228973', '556208599794450434'] #Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -391,7 +391,7 @@ class Submission:
                                                 description="{}, Level: {}".format(top_role, stats['level']),
                                                 color=0x33cccc)
                     pass
-                stats_embed.add_field(name="Progress:", value=f"{stats['expbar']}")
+                stats_embed.add_field(name="Progress:", value=f"{stats['expbar']}", inline=False)
                 stats_embed.add_field(name="**XP**:", value=f"{stats['xp']}/{stats['next_level_required_xp']}",
                                       inline=True)
                 stats_embed.add_field(name="**Current Streak**:", value="{0}".format(stats['streak']), inline=True)
@@ -1147,7 +1147,9 @@ class Submission:
                 # if we levelled up, increase level
                 if new_xp_total >= next_level_required_xp:
                     current_level = current_level + 1
+                    logger.debug("Checking Roles")
                     await self.updateRole(current_level, message)
+                    logger.debug("Checked Roles")
                     new_xp_total = new_xp_total - next_level_required_xp
                     db_user.level = int(current_level)
                     db_user.currentxp = int(new_xp_total)
