@@ -1276,7 +1276,6 @@ class Submission:
             pass
         return done  # this value will be None or a valid user, make sure to check
 
-    @commands.cooldown(1, 10, commands.BucketType.channel)
     @commands.command('levelcheck', pass_context=True)
     async def levelCheck(self, ctx):
         db_user = await self.getDBUser(ctx.message.author.id)
