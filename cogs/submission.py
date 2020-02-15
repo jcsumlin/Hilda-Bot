@@ -1276,6 +1276,20 @@ class Submission:
             pass
         return done  # this value will be None or a valid user, make sure to check
 
+    @commands.cooldown(1, 10, commands.BucketType.channel)
+    @commands.command('levelcheck', pass_context=True)
+    async def levelCheck(self, ctx):
+        db_user = await self.getDBUser(ctx.message.author.id)
+        if db_user is not None:
+            added_roles = await self.updateRole(db_user.level, ctx.message)
+            if len(added_roles) > 0:
+                embed = discord.Embed(title="Finished checking your roles!", description=f"**The roles that were added because of this check were:**\n{', '.join(added_roles)} ", color=discord.Color.green())
+            else:
+                embed = discord.Embed(title="Finished checking your roles!", description=f"All your roles are already up to date! No roles were added.", color=discord.Color.dark_orange())
+            await self.bot.say(embed=embed)
+        else:
+            await self.bot.say("Could not find your user record!")
+
     async def updateRole(self, current_level, message: discord.Message):
         levels = []
         before_roles = message.author.roles
@@ -1289,14 +1303,17 @@ class Submission:
             return
         if len(after_roles) == 0:
             return
+        added_roles = []
         for role in after_roles:
             if role not in before_roles:
                 try:
                     await self.bot.add_roles(message.author, role)
+                    added_roles.append(role.name)
                 except Exception as e:
-                    logger.exception(f"Failed to add role {role.nam} to {message.author.name}: {e}")
+                    logger.exception(f"Failed to add role {role.name} to {message.author.name}: {e}")
                     return False
                 logger.success(f"Successfully added {role.name} to {message.author.name}")
+        return added_roles
 
 
     async def buildAfterRoles(self, levels: list, max_level: int, server):
@@ -1308,6 +1325,9 @@ class Submission:
                 except Exception as e:
                     logger.exception(f"Could not get role for afterRoles list: {e}")
                     return False
+                if role is None:
+                    logger.exception(f"Failed to find role with name {self.auth['level-roles'][f'lvl_{level}']}")
+                    continue
                 after_roles.append(role)
         return after_roles
 
