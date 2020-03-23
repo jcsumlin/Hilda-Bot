@@ -98,6 +98,8 @@ class Birthdays:
             now = datetime.now()
             if birthday.month == now.month:
                 user_name = discord.utils.get(ctx.message.server.members, id=user['user_id'])
+                if user_name is None:
+                    continue
                 embed.add_field(name=user_name.name, value=birthday.strftime('%m/%d'))
         await self.bot.send_message(ctx.message.channel, embed=embed)
 
