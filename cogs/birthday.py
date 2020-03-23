@@ -167,7 +167,7 @@ class Birthdays:
                     else:
                         suffix = ["st", "nd", "rd"][years % 10 - 1]
 
-                    await self.bot.send_message(channel, f"Hey <@{user['user_id']}>! I just wanted to wish you the happiest of birthdays on your {years}{suffix} birthday! :birthday: :heart:")
+                    await self.bot.send_message(channel, f"Hey <@{user['user_id']}>! I just wanted to wish you the happiest of birthdays! Can I have a slice of cake too? :birthday: :heart:")
                     user['COMPLETE'] = True
                     await self.save_config(birthdays)
 
