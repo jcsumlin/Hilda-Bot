@@ -49,7 +49,7 @@ class Submission:
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
-        self.testServerIds = ['553739065074253834', '593887030216228973', '556208599794450434'] #Always allow commands here
+        self.testServerIds = ['553739065074253834', '593887030216228973', '556208599794450434', "670472297504833546"] #Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -131,7 +131,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 # <:HildaNice:554394104117723136>
                 if reaction.emoji.id == '554394104117723136' and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!FFCE")):
+                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -159,7 +159,7 @@ class Submission:
             if type(reaction.emoji) is discord.Emoji:
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                 if reaction.emoji.id == '554394104117723136' and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!FFCE")):
+                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
                     # logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
                     db_user = self.session.query(User).filter(User.id == user.id).one()
@@ -242,12 +242,21 @@ class Submission:
     @commands.command(pass_context=True)
     async def leaderboard(self, ctx):
         if await self.checkChannel(ctx):
-            leaderboard = self.session.query(User).order_by(User.level.desc(), User.currentxp.desc()).limit(10)
+            leaderboard = self.session.query(User).filter(User.server_id == str(ctx.message.server.id)).order_by(User.level.desc(), User.currentxp.desc()).limit(10)
             embed = discord.Embed(title="__**Leaderboard**__", thumbnail=ctx.message.server.icon,
                                   description="The top 10 users of this server!", colour=0xb2cefe)
             for user in leaderboard:
+                if user is None:
+                    continue
+                try:
+                    member = ctx.message.server.get_member(user.id)
+                except Exception as e:
+                    member = user
+                    pass
+                if member is None:
+                    member = user
                 embed.add_field(
-                    name=":black_small_square: " + user.name + f"  Level: {user.level} | XP: {user.currentxp}",
+                    name=":black_small_square: " + member.name + f"  Level: {user.level} | XP: {user.currentxp}",
                     value="==========", inline=False)
 
             await self.bot.send_message(ctx.message.channel, embed=embed)
@@ -273,8 +282,8 @@ class Submission:
                     pass
 
     @commands.command(pass_context=True)
-    async def FFCE(self, ctx):
-        if ctx.message.channel.id == "670472297504833546" or ctx.message.server.id == "553739065074253834" or ctx.message.server.id == "593887030216228973":
+    async def pride(self, ctx):
+        if ctx.message.channel.id == "716049776105357323" or ctx.message.server.id in self.testServerIds:
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[6:].lstrip(" ")
@@ -283,18 +292,18 @@ class Submission:
                 else:
                     comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
                 try:
-                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=3)
+                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=4)
                 except:
                     pass
             else:
                 try:
                     # normal submit.
                     comment = ctx.message.content[6:].lstrip(" ")
-                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=3)
+                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=4)
                 except:
                     pass
         else:
-            await self.commandError("Please go to <#670472297504833546> to use this command", ctx.message.channel)
+            await self.commandError("Please go to <#716049776105357323> to use this command", ctx.message.channel)
 
     @commands.command(pass_context=True)
     async def streakwarning(self, ctx, setting=None):
@@ -414,12 +423,17 @@ class Submission:
                         name="<a:blobdance:569473285436211210> FFCE Event 2020 <a:blobdance:569473285436211210>",
                         value=f"    **Submits**: {stats['total_ffce_submissions']}",
                         inline=False)
+                if stats['total_pride_2020_submissions'] > 0:
+                    stats_embed.add_field(
+                        name="<:PrideHeart2020:716501406684545126> Pride Event 2020 <:PrideHeart2020:716501406684545126>",
+                        value=f"    **Submits**: {stats['total_pride_2020_submissions']}",
+                        inline=False)
                     if db_user.special_event_submitted is True:
                         submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
                     else:
                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
-                    stats_embed.add_field(name="FFCE Event Submit Status", value=submit_status, inline=True)
+                    stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -848,16 +862,16 @@ class Submission:
             embed_events = discord.Embed(title="Events",
                                          description="All commands related to HildaCord's current events",
                                          color=0x90BDD4)
-            embed_events.add_field(name="!FFCE",
-                                   value="Please go to <#670472297504833546> to use this command. To submit "
+            embed_events.add_field(name="!pride",
+                                   value="Please go to <#716049776105357323> to use this command. To submit "
                                          "content, drag and drop the file (.png, .gif, .jpg) "
-                                         "into discord and add '!FFCE [comment (optional)]' as a comment to it.",
+                                         "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                    inline=False)
-            embed_events.add_field(name="!FFCE [link] [comment (optional)]",
-                                   value="Please go to <#670472297504833546> to use this command. "
+            embed_events.add_field(name="!pride [link] [comment (optional)]",
+                                   value="Please go to <#716049776105357323> to use this command. "
                                          "If you'd like to submit via internet link, make sure you right click"
                                          " the image and select 'copy image location' and submit that URL using"
-                                         " the !FFCE command.",
+                                         " the !pride command.",
                                    inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
@@ -979,14 +993,14 @@ class Submission:
         embed_events = discord.Embed(title="Events",
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
-        embed_events.add_field(name="!FFCE",
-                               value="Please go to <#670472297504833546> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!FFCE [comment (optional)]' as a comment to it.",
+        embed_events.add_field(name="!pride",
+                               value="Please go to <#716049776105357323> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                     "into discord and add '!pride [comment (optional)]' as a comment to it.",
                                inline=False)
-        embed_events.add_field(name="!FFCE [link] [comment (optional)]",
-                               value="Please go to <#670472297504833546> to use this command. If you'd like to submit via internet link, make sure you right click"
+        embed_events.add_field(name="!pride [link] [comment (optional)]",
+                               value="Please go to <#716049776105357323> to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
-                                     " the !FFCE command.",
+                                     " the !pride command.",
                                inline=False)
         try:
             await self.bot.send_message(ctx.message.author, embed=embed_events)
@@ -1250,8 +1264,8 @@ class Submission:
         self.session.commit()
         logger.success("housekeeping finished")
         if not manual:
-            await self.bot.send_message(self.bot.get_channel("495034452422950915"),
-                                        "Housekeeping has finished running. You may now !submit and !FFCE again!")
+            await self.bot.send_message(self.bot.get_channel("716049776105357323"),
+                                        "Housekeeping has finished running. You may now !submit and !pride again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
@@ -1343,6 +1357,8 @@ class Submission:
                      and_(Content.user == db_user.id, Content.event_id == 2)).count(),
                  "total_ffce_submissions": self.session.query(Content).filter(
                      and_(Content.user == db_user.id, Content.event_id == 3)).count(),
+                 "total_pride_2020_submissions": self.session.query(Content).filter(
+                     and_(Content.user == db_user.id, Content.event_id == 4)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
