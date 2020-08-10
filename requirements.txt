@@ -1,4 +1,4 @@
-simplejson==3.16.0
+simplejson==3.17.2
 pytz==2019.1
 APScheduler==3.6.0
 discord.py
@@ -7,7 +7,7 @@ sqlalchemy
 loguru==0.2.5
 python-dateutil
 beautifulsoup4==4.7.1
-GitPython==2.1.11
+GitPython
 sqlalchemy-migrate==0.12.0
 alembic==1.2.1
 requests

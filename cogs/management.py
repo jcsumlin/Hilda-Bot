@@ -11,7 +11,7 @@ from pytz import utc
 from .utils.dataIO import dataIO
 
 
-class Management(commands.cog):
+class Management(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         scheduler = AsyncIOScheduler(timezone=utc)
@@ -41,26 +41,26 @@ class Management(commands.cog):
         await os.rename(FilePath, './cogs/backup/database' + "_" + timeStamp + '.db')
         logger.success("=====Database Backup Complete!=====")
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def update(self, ctx):
-        if ctx.message.author.id == "204792579881959424" or ctx.message.author.id == "169983837168861184":
+        if ctx.message.author.id == 204792579881959424 or ctx.message.author.id == 169983837168861184:
             git_dir = "./"
             try:
                 g = git.cmd.Git(git_dir)
                 g.pull()
                 embed = discord.Embed(title="Successfully pulled from repository", color=0x00df00)
-                await self.bot.send_message(ctx.message.channel, embed=embed)
+                await ctx.message.channel.send(embed=embed)
             except Exception as e:
                 errno, strerror = e.args
                 embed = discord.Embed(title="Command Error!",
                                       description=f"Git Pull Error: {errno} - {strerror}",
                                       color=0xff0007)
-                await self.bot.send_message(ctx.message.channel, embed=embed)
+                await ctx.message.channel(embed=embed)
         else:
-            await self.bot.send_message("You don't have access to this command!")
+            await ctx.message.channel("You don't have access to this command!")
 
     @commands.has_role("Staff")
-    @commands.group(pass_context=True)
+    @commands.group()
     async def response(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!",
@@ -71,16 +71,16 @@ class Management(commands.cog):
                             value="Removes a channel to the list of channels users can user commands in.")
             embed.add_field(name="!response list",
                             value="Displays the list of channels users can user commands in.")
-            await self.bot.send_message(ctx.message.channel, embed=embed)
+            await ctx.message.channel(embed=embed)
 
-    @response.command(name="add", pass_context=True)
-    async def _add(self, ctx, channel: discord.Channel = None):
+    @response.command(name="add")
+    async def _add(self, ctx, channel: discord.TextChannel = None):
         if channel == None:
             await self.commandError(
                 "That's not how you use that command!: `!response add #channel-to-add`",
                 ctx.message.channel)
         else:
-            channel_id = str(channel.id)
+            channel_id = channel.id
             if channel_id in self.approvedChannels:
                 await self.commandError("That channel is already in the list!", ctx.message.channel)
                 return
@@ -94,14 +94,14 @@ class Management(commands.cog):
                 await self.commandError("Error while saving channel to file!!", ctx.message.channel)
 
     @response.command(name="remove")
-    async def _remove(self, channel: discord.Channel = None):
+    async def _remove(self, ctx, channel: discord.TextChannel = None):
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
                                   description="!response remove #channel-to-delete",
                                   color=discord.Color.red())
-            await self.bot.say(embed=embed)
+            await ctx.send(embed=embed)
         else:
-            channel_id = str(channel.id)
+            channel_id = channel.id
             if channel_id in self.approvedChannels:
                 self.approvedChannels.remove(channel_id)
                 try:
@@ -109,24 +109,24 @@ class Management(commands.cog):
                     embed = discord.Embed(
                         title=f"Successfully removed channel #{channel.name} from the allow commands list!",
                         color=discord.Color.green())
-                    await self.bot.say(embed=embed)
+                    await ctx.send(embed=embed)
                 except:
                     embed = discord.Embed(title="Error while saving file!!",
                                           color=discord.Color.red())
-                    await self.bot.say(embed=embed)
+                    await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(title="Channel is not in the list!",
                                       color=discord.Color.red())
-                await self.bot.say(embed=embed)
+                await ctx.send(embed=embed)
 
-    @response.command(name="list", pass_context=True)
+    @response.command(name="list")
     async def _list(self, ctx):
         embed = discord.Embed(title="List of channels users can use commands in.")
         for channel in self.approvedChannels:
             embed.add_field(name=f"{self.bot.get_channel(channel).name}",
                             value=f"ID: {channel}",
                             inline=False)
-        await self.bot.send_message(ctx.message.channel, embed=embed)
+        await ctx.message.channel(embed=embed)
 
 def setup(bot):
     bot.add_cog(Management(bot))
