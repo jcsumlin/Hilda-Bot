@@ -33,6 +33,7 @@ from .utils.dataIO import dataIO
 class Submission(commands.Cog):
 
     def __init__(self, bot):
+        self.submission_triggers = ["submit", "pride", "ffce"]
         self.bot = bot
         engine = create_engine('sqlite:///database.db')
         Base.metadata.bind = engine
@@ -50,7 +51,8 @@ class Submission(commands.Cog):
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
         self.epoch = datetime.utcfromtimestamp(0)
-        self.testServerIds = [553739065074253834, 593887030216228973, 556208599794450434, 670472297504833546] #Always allow commands here
+        self.testServerIds = [553739065074253834, 593887030216228973, 556208599794450434,
+                              670472297504833546]  # Always allow commands here
 
     async def setGame(self):
         if self.messageSetting == 0:
@@ -60,13 +62,13 @@ class Submission(commands.Cog):
                     members += 1
             self.messageSetting = 1
             await self.bot.change_presence(activity=discord.Game(name=f'!help | on Hildacord with {members} members',
-                                                             url='https://www.patreon.com/botboi',
-                                                             type=1))
+                                                                 url='https://www.patreon.com/botboi',
+                                                                 type=1))
 
         elif self.messageSetting == 1:
             await self.bot.change_presence(activity=discord.Game(name='!help | www.patreon.com/botboi',
-                                                             url='https://www.patreon.com/botboi',
-                                                             type=1))
+                                                                 url='https://www.patreon.com/botboi',
+                                                                 type=1))
             self.messageSetting = 0
 
     async def commandError(self, message, channel):
@@ -78,7 +80,7 @@ class Submission(commands.Cog):
 
     async def commandSuccess(self, title, channel, desc=""):
         embed = discord.Embed(title=title, description=desc, color=0x00df00)
-        await channel.send(embed=embed)
+        return await channel.send(embed=embed)
 
     @commands.has_role("Staff")
     @commands.command()
@@ -115,7 +117,8 @@ class Submission(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.content.startswith('!') == False and message.channel.id not in self.bannedXPChannels or message.guild.id in self.testServerIds:
+        if message.content.startswith(
+                '!') == False and message.channel.id not in self.bannedXPChannels or message.guild.id in self.testServerIds:
             # If this message is not a command and is not in the list of channels users CANNOT gain XP from chatting
             db_user = await self.getDBUser(str(message.author.id))
             if db_user != None:
@@ -127,46 +130,61 @@ class Submission(commands.Cog):
             else:
                 await self.register(message)
 
-    async def on_reaction_add(self, reaction, user):
-        userToUpdate = reaction.message.author.id
+    def check_reaction(self, message, reaction):
+        submit_command = False
+        for trigger in self.submission_triggers:
+            if message.content.startswith("!" + trigger):
+                submit_command = True
+        return reaction.id == int(self.auth.get('discord', 'KUDOS_REACTION_ID')) and submit_command
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        reaction = payload.emoji
+        message_id = payload.message_id
+        guild_id = payload.guild_id
+        guild = discord.utils.find(lambda g: g.id == guild_id, self.bot.guilds)
+        channel = discord.utils.get(guild.channels, id=payload.channel_id)
+        message = await channel.fetch_message(id=message_id)
+        userToUpdate = discord.utils.get(guild.members, id=payload.user_id)
         try:
-            if type(reaction.emoji) is discord.Emoji:
+            if isinstance(reaction, discord.PartialEmoji):
                 # <:HildaNice:554394104117723136>
-                if reaction.emoji.id == 554394104117723136 and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
+
+                if self.check_reaction(message, reaction):
                     # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
                     # find user in database using id
-                    db_user = self.session.query(User).filter(User.id == user.id).one()
-                    message_id = reaction.message.id
+                    db_user = self.session.query(User).filter(User.id == payload.user_id).one()
                     content_author = self.session.query(Content).filter(Content.message_id == message_id).one()
                     # increase adores by 1 and xp
                     db_user.adores += 1
-                    db_user.currentxp += random.randint(20, 25)
+                    db_user.currentxp += 20
                     content_author.score += 1
                     # commit session
                     self.session.commit()
                     logger.debug(
-                        f"Reaction successfully added from {reaction.message.id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
-
-                else:
-                    pass
+                        f"Reaction successfully added from {message_id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
         except:
             logger.error("Adding reaction broke for user " + userToUpdate)
 
-    async def on_reaction_remove(self, reaction, user):
-        userToUpdate = reaction.message.author.id
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        reaction = payload.emoji
+        message_id = payload.message_id
+        guild_id = payload.guild_id
+        guild = discord.utils.find(lambda g: g.id == guild_id, self.bot.guilds)
+        channel = discord.utils.get(guild.channels, id=payload.channel_id)
+        message = await channel.fetch_message(id=message_id)
+        userToUpdate = discord.utils.get(guild.members, id=payload.user_id)
         # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
         try:
             # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
-            if type(reaction.emoji) is discord.Emoji:
+            if isinstance(reaction, discord.PartialEmoji):
                 # logger.debug("reaction added " + user.name + " " + str(reaction.emoji))
-                if reaction.emoji.id == 554394104117723136 and (
-                        reaction.message.content.startswith("!submit") or reaction.message.content.startswith("!pride")):
+                if self.check_reaction(message, reaction):
                     # logger.debug(f"reaction removed {user.name} : {reaction.emoji}")
                     # find user in database using id
-                    db_user = self.session.query(User).filter(User.id == user.id).one()
-                    message_id = reaction.message.id
-                    content_author = self.session.query(Content).filter(Content.message_id == message_id).one()
+                    db_user = self.session.query(User).filter(User.id == str(payload.user_id)).one()
+                    content_author = self.session.query(Content).filter(Content.message_id == str(message_id)).one()
                     # increase adores by 1 and xp
                     db_user.adores -= 1
                     db_user.currentxp -= 20
@@ -174,7 +192,7 @@ class Submission(commands.Cog):
                     # commit session
                     self.session.commit()
                     logger.debug(
-                        f"Reaction successfully removed from {reaction.message.id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
+                        f"Reaction successfully removed from {message_id}. Score: {content_author.score}, Adores: {db_user.adores}, XP: {db_user.currentxp}")
         except:
             logger.error(f"Removing reaction from {reaction.message.id} broke.")
 
@@ -244,21 +262,22 @@ class Submission(commands.Cog):
     @commands.command()
     async def leaderboard(self, ctx):
         if await self.checkChannel(ctx):
-            leaderboard = self.session.query(User).filter(User.server_id == str(ctx.message.guild.id)).order_by(User.level.desc(), User.currentxp.desc()).limit(10)
+            leaderboard = self.session.query(User).filter(User.server_id == str(ctx.message.guild.id)).order_by(
+                User.level.desc(), User.currentxp.desc()).limit(10)
             embed = discord.Embed(title="__**Leaderboard**__", thumbnail=ctx.message.guild.icon,
                                   description="The top 10 users of this server!", colour=0xb2cefe)
             for user in leaderboard:
                 if user is None:
                     continue
                 try:
-                    member = ctx.message.guild.get_member(user.id)
+                    member = ctx.message.guild.get_member(int(user.id))
                 except Exception as e:
                     member = user
                     pass
                 if member is None:
                     member = user
                 embed.add_field(
-                    name=":black_small_square: " + member.name + f"  Level: {user.level} | XP: {user.currentxp}",
+                    name=":black_small_square: " + escape(member.name, formatting=True) + f"  Level: {user.level} | XP: {user.currentxp}",
                     value="==========", inline=False)
 
             await ctx.send(ctx.message.channel, embed=embed)
@@ -283,35 +302,33 @@ class Submission(commands.Cog):
                 except:
                     pass
 
-    @commands.command()
-    async def pride(self, ctx):
-        if ctx.message.channel.id == 716049776105357323 or ctx.message.guild.id in self.testServerIds:
-            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
-                # do linksubmit
-                message = ctx.message.content[6:].lstrip(" ")
-                if message.startswith('https://') or message.startswith('http://'):
-                    comment = ""
-                else:
-                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-                try:
-                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=4)
-                except:
-                    pass
-            else:
-                try:
-                    # normal submit.
-                    comment = ctx.message.content[6:].lstrip(" ")
-                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=4)
-                except:
-                    pass
-        else:
-            await self.commandError("Please go to <#716049776105357323> to use this command", ctx.message.channel)
+    # @commands.command()
+    # async def pride(self, ctx):
+    #     if ctx.message.channel.id == 716049776105357323 or ctx.message.guild.id in self.testServerIds:
+    #         if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
+    #             # do linksubmit
+    #             message = ctx.message.content[6:].lstrip(" ")
+    #             if message.startswith('https://') or message.startswith('http://'):
+    #                 comment = ""
+    #             else:
+    #                 comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
+    #             try:
+    #                 await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=4)
+    #             except:
+    #                 pass
+    #         else:
+    #             try:
+    #                 # normal submit.
+    #                 comment = ctx.message.content[6:].lstrip(" ")
+    #                 await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=4)
+    #             except:
+    #                 pass
+    #     else:
+    #         await self.commandError("Please go to <#716049776105357323> to use this command", ctx.message.channel)
 
     @commands.command()
     async def streakwarning(self, ctx, setting=None):
         if await self.checkChannel(ctx):
-            channel = ctx.message.channel.id
-            server_id = ctx.message.guild.id
             db_user = await self.getDBUser(str(ctx.message.author.id))
             if db_user != None:
                 if setting == None:
@@ -323,13 +340,11 @@ class Submission(commands.Cog):
                 elif setting.lower() == 'on':
                     db_user.decaywarning = True
                     self.session.commit()
-                    await ctx.send(self.bot.get_channel(channel),
-                                                f"```diff\n+ Decay warning notification for {ctx.message.author} are now on!\n```")
+                    await ctx.send(f"```diff\n+ Decay warning notification for {ctx.message.author} are now on!\n```")
                 elif setting.lower() == 'off':
                     db_user.decaywarning = False
                     self.session.commit()
-                    await ctx.send(self.bot.get_channel(channel),
-                                                f"```diff\n+ Decay warning notification for {ctx.message.author} are now off!\n```")
+                    await ctx.send(f"```diff\n+ Decay warning notification for {ctx.message.author} are now off!\n```")
 
     @commands.command()
     async def levelwarning(self, ctx, setting=None):
@@ -347,13 +362,11 @@ class Submission(commands.Cog):
                 elif setting.lower() == 'on':
                     db_user.levelnotification = True
                     self.session.commit()
-                    await ctx.send(self.bot.get_channel(channel),
-                                                f"```diff\n+ Level up notification for {ctx.message.author} are now on!\n```")
+                    await ctx.send(f"```diff\n+ Level up notification for {ctx.message.author} are now on!\n```")
                 elif setting.lower() == 'off':
                     db_user.levelnotification = False
                     self.session.commit()
-                    await ctx.send(self.bot.get_channel(channel),
-                                                f"```diff\n+ Level up notification for {ctx.message.author} are now off!\n```")
+                    await ctx.send(f"```diff\n+ Level up notification for {ctx.message.author} are now off!\n```")
 
     @commands.command()
     async def stats(self, ctx, user: discord.Member = None):
@@ -471,7 +484,8 @@ class Submission(commands.Cog):
 
                 await ctx.send(embed=stats_embed)
             else:
-                await ctx.send("```diff\n- I couldn't find your name in our database. Are you sure you're registered? If you are, contact an admin immediately.\n```")
+                await ctx.send(
+                    "```diff\n- I couldn't find your name in our database. Are you sure you're registered? If you are, contact an admin immediately.\n```")
 
     @commands.command()
     async def timeleft(self, ctx):
@@ -487,12 +501,12 @@ class Submission(commands.Cog):
             jobs = self.scheduler.get_jobs()
             if difference_hours < 5:
                 await ctx.send(
-                                            '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
-                                                difference_hours, difference_minutes, seconds_to_work))
+                    '```diff\n- {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
+                        difference_hours, difference_minutes, seconds_to_work))
             else:
                 await ctx.send(
-                                            '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
-                                                difference_hours, difference_minutes, seconds_to_work))
+                    '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
+                        difference_hours, difference_minutes, seconds_to_work))
 
     # @commands.command()
     # async def idea(self, ctx):
@@ -573,7 +587,6 @@ class Submission(commands.Cog):
             # else:
             #     await self.bot.add_roles(user, role)
 
-
             # for rank in serv.roles:
             #     if rank.name == "Artists":
             #         await self.bot.add_roles(ctx.message.author, rank)
@@ -598,15 +611,14 @@ class Submission(commands.Cog):
 
     @commands.has_role('Staff')
     @commands.command()
-    async def fullreset(self, ctx, user=None):
+    async def fullreset(self, ctx, user: discord.User = None):
         if await self.checkChannel(ctx):
             if user == None:
                 receiver = ctx.message.author
-            elif user != None and type(user) is discord.Member:
+            elif user != None and isinstance(user, discord.User):
                 receiver = user
             else:
-                await ctx.send(
-                                            "```\n!fullreset {@user} to reset a user or !fullreset to reset yourself.\n```")
+                await ctx.send("```\n!fullreset {@user} to reset a user or !fullreset to reset yourself.\n```")
                 return
             try:
                 db_user = self.session.query(User).filter(User.id == str(receiver.id)).one()
@@ -620,82 +632,87 @@ class Submission(commands.Cog):
                 db_user.submitted = False
                 self.session.commit()
                 logger.success(f"{ctx.message.author.name} reset {receiver.name}'s stats")
-                await ctx.send(
-                                          "```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
+                await ctx.send("```Markdown\n#{0} stats have been fully reset\n```".format(receiver.name))
             except:
                 await ctx.send("```Markdown\n#Something went wrong.\n```")
                 self.session.rollback()
 
     @commands.has_role("Staff")
     @commands.command()
-    async def deletesubmissions(self, ctx, user: discord.Member = None):
+    async def deletesubmissions(self, ctx, user: discord.User = None):
         if await self.checkChannel(ctx):
             if user == None:
                 await ctx.send("Please specify a user.")
             else:
                 db_user = await self.getDBUser(str(user.id))
                 if db_user == None:
-                    await ctx.send("User is not registered.")
+                    return await ctx.send("User is not registered. They shouldn't have any submissions logged.")
                 else:
-                    content = len(self.session.query(Content).filter_by(user=user.name).all())
+                    content = len(self.session.query(Content).filter_by(user=str(user.id)).all())
                     if content > 0:
-                        self.session.query(Content).filter_by(user=user.name).delete()
+                        self.session.query(Content).filter_by(user=str(user.id)).delete()
                         self.session.commit()
                         await ctx.send(
-                                                    f"{user.name}'s submissions have been removed from the DB")
+                            f"ALL of {user.name}'s submissions have been removed from the database! Their stats will not have changed (use !fullreset [user] to reset them completly).")
                     else:
                         await ctx.send(f"{user.name} has no submissions to remove.")
 
     @commands.has_role("Staff")
     @commands.command()
-    async def delete(self, ctx, user: discord.Member = None):
+    async def delete(self, ctx, user: discord.User = None):
         if await self.checkChannel(ctx):
             if user is None:
                 await self.commandError(channel=ctx.message.channel,
                                         message="!delete [user] requires you to mention a discord user to delete their record in the database")
                 return
-            msg = await ctx.send(
-                                              'Are you sure you want to COMPLETELY erase this user?')
-            await ctx.message.add_reaction(msg, u"\U0001F44D")
-            await ctx.message.add_reaction(msg, u"\U0001F44E")
-            res = await self.bot.wait_for_reaction([u"\U0001F44D", u"\U0001F44E"], user=ctx.message.author, message=msg,
-                                                   timeout=15)
-            if res.reaction.emoji == u"\U0001F44D":
+            msg = await ctx.send('Are you sure you want to COMPLETELY erase this user?')
+            await msg.add_reaction(u"\U0001F44D")
+            await msg.add_reaction(u"\U0001F44E")
+
+            def check(reaction, user):
+                return str(reaction.emoji) in [u"\U0001F44D", u"\U0001F44E"] and user == ctx.message.author
+
+            res = await self.bot.wait_for('reaction_add', check=check, timeout=15.0)
+            if res[0].emoji == u"\U0001F44D":
                 db_user = await self.getDBUser(str(user.id))
                 if db_user != None:
                     try:
                         receiver = user
                         db_user = self.session.query(User).filter(User.id == str(receiver.id)).delete()
-                        db_user = self.session.query(Content).filter(Content.user == str(receiver.name)).delete()
+                        db_content = self.session.query(Content).filter(Content.user == str(receiver.id)).delete()
                         self.session.commit()
                         logger.success(f"User {user.name} has been deleted from the DB by {ctx.message.author.name}")
-                        await self.commandSuccess(channel=ctx.message.channel, title="User Successfully Deleted",
-                                                  desc="Users Stats and submissions have been removed from the Database.")
-                        await self.bot.delete_message(msg)
+                        completed = await self.commandSuccess(channel=ctx.message.channel,
+                                                              title="User Successfully Deleted",
+                                                              desc="Users Stats and submissions have been removed from the Database.")
+                        await msg.delete()
+                        await completed.delete(delay=5)
                     except SQLAlchemyError as e:
                         logger.error(e)
                 else:
                     await self.commandError("User's ID could not but found in the Database", ctx.message.channel)
-            elif res.reaction.emoji == u"\U0001F44E":
+            elif res[0].emoji == '👎':
                 canceled = await ctx.send("Action canceled.")
-                await self.bot.delete_message(msg)
+                await msg.delete()
+                await canceled.delete(delay=5)
 
             else:
                 canceled = await ctx.send("Action canceled. [invalid reaction]")
-                await self.bot.delete_message(msg)
+                await msg.delete()
+                await canceled.delete(delay=5)
 
     @commands.has_role("Staff")
     @commands.command()
     async def rollback(self, ctx, messageID=None):
         if await self.checkChannel(ctx):
-            submission = self.getDBSubmission(messageID)
+            submission = self.getDBSubmission(str(messageID))
             if submission is None:
                 await ctx.send(
-                                            "```diff\n- No such Submission. Make sure you are using the message ID of the submit post.\n```")
+                    "```diff\n- No such Submission. Make sure you are using the message ID of the submit post.\n```")
                 return
             remove = self.removeDBSubmission(messageID)
             if remove is True:
-                db_user = await self.getDBUser(str(submission.user.id))
+                db_user = await self.getDBUser(str(submission.user))
                 newscore = db_user.totalsubmissions - 1
                 newcurrency = db_user.currency - 10
                 current_streak = db_user.streak
@@ -731,16 +748,13 @@ class Submission(commands.Cog):
                     db_user.submitted = False
                 # and push all cells to the database
                 self.session.commit()
-                await ctx.send(
-                                            "```diff\n+ Submission has been removed from the DB.\n```")
+                await ctx.send("```diff\n+ Submission has been removed from the database.\n```")
                 await self.updateRole(db_user.level, ctx.message)
             elif remove is False:
-                await ctx.send(
-                                            "```diff\n- Error Removing Submission from DB, check logs.\n```")
+                await ctx.send("```diff\n- Error Removing Submission from database, check logs.\n```")
 
             else:
-                await ctx.send(
-                                            "```diff\n- Error Removing Submission from DB, check logs.\n```")
+                await ctx.send("```diff\n- Error Removing Submission from DB, check logs.\n```")
 
     async def levelup(self, message):
         """
@@ -760,7 +774,7 @@ class Submission(commands.Cog):
                 self.session.commit()
                 if db_user.levelnotification != False:
                     await self.commandSuccess(
-                        title= f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
+                        title=f'You Leveled Up! You are now level {str(stats["level"])}! :confetti_ball:',
                         desc='To turn off this notification do !levelwarning off in the designated bot channels.',
                         channel=message.author)
                     return
@@ -769,7 +783,7 @@ class Submission(commands.Cog):
 
     @commands.group()
     async def help(self, ctx):
-        if (ctx.message.channel.is_private or await self.checkChannel(ctx)) and ctx.invoked_subcommand is None:
+        if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
             embed = discord.Embed(title="Hildabot Help",
                                   description='Here is a list of all of the commands you can use! [Bot made by J\_C\_\_\_#8947]',
                                   color=0x90BDD4)
@@ -777,12 +791,10 @@ class Submission(commands.Cog):
                             value="Use any of the module's title to see the help for just that section. (reduces spam)")
             embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
             staff = False
-            if not ctx.message.channel.is_private:
+            if True:
                 role_names = [role.name for role in ctx.message.author.roles]
                 if 'Staff' in role_names:
                     staff = True
-            if ctx.message.channel.is_private:
-                staff = True
             embed_admin = discord.Embed(title="Staff",
                                         description="These commands require the Staff role to be used",
                                         color=0x90BDD4)
@@ -877,12 +889,12 @@ class Submission(commands.Cog):
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
             try:
-                await ctx.send(ctx.message.author, embed=embed)
+                await ctx.message.author.send(embed=embed)
                 if staff:
-                    await ctx.send(ctx.message.author, embed=embed_admin)
-                await ctx.send(ctx.message.author, embed=embed_xp)
-                await ctx.send(ctx.message.author, embed=embed_content)
-                await ctx.send(ctx.message.author, embed=embed_events)
+                    await ctx.message.author.send(embed=embed_admin)
+                await ctx.message.author.send(embed=embed_xp)
+                await ctx.message.author.send(embed=embed_content)
+                await ctx.message.author.send(embed=embed_events)
             except discord.Forbidden:
                 message = await self.commandError(
                     "Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
@@ -891,13 +903,13 @@ class Submission(commands.Cog):
                 await self.bot.delete_message(message)
 
     @commands.has_role("Staff")
-    @help.command(name="staff", )
+    @help.command(name="staff")
     async def _staff(self, ctx):
         embed_admin = discord.Embed(title="Staff",
                                     description="These commands require the Staff role to be used",
                                     color=0x90BDD4)
         embed_admin.add_field(name="!delete [user]",
-                              value="Removes a user from the database (Staff only! VERY DANGEROUS)",
+                              value="Removes a user from the database. Will ask for confirmation before any action is taken. (Staff only! VERY DANGEROUS)",
                               inline=False)
         embed_admin.add_field(name="!fullreset", value="Sets a users stats to 0. (Staff only!)",
                               inline=False)
@@ -1033,7 +1045,7 @@ class Submission(commands.Cog):
                 "That's not how you use that command!: `!xp add #channel-to-add`",
                 ctx.message.channel)
         else:
-            channel_id = str(channel.id)
+            channel_id = channel.id
             if channel_id in self.bannedXPChannels:
                 await self.commandError("That channel is already in the banned list!",
                                         ctx.message.channel)
@@ -1131,14 +1143,14 @@ class Submission(commands.Cog):
 
         if db_user is None:
             await message.send(message.channel,
-                                        "```diff\n- I couldn't find your name in our datavase. Are you sure you're registered? If you are, contact an admin immediately.\n```")
+                               "```diff\n- I couldn't find your name in our datavase. Are you sure you're registered? If you are, contact an admin immediately.\n```")
         else:
             # db_user is our member object
             # check if already submitted
             if db_user.submitted is True and event_id == False:
                 logger.error(str(userToUpdate.name) + ' already submitted')
                 await message.channel.send(message.channel,
-                                            "```diff\n- You seem to have submitted something today already!\n```")
+                                           "```diff\n- You seem to have submitted something today already!\n```")
             elif db_user.special_event_submitted is True and isinstance(event_id, int) and event_id is not False:
                 event = self.session.query(SpecialEvents).filter_by(id=event_id).one_or_none()
                 if event is None:
@@ -1146,7 +1158,7 @@ class Submission(commands.Cog):
                     return
                 logger.error(str(userToUpdate.name) + f' already submitted [{event.name} event]')
                 await message.channel.send(message.channel,
-                                            f"```diff\n- You seem to have already submitted something for the {event.name} event today!\n```")
+                                           f"```diff\n- You seem to have already submitted something for the {event.name} event today!\n```")
             # otherwise, do the submit
             else:
                 # update all the stats
@@ -1193,15 +1205,17 @@ class Submission(commands.Cog):
                 await self.submitLinktoDB(user=userToUpdate, link=url, message_id=str(message.id),
                                           comments=comment, xp_gained=xp_gained, event_id=event_id)
                 await self.updateRole(db_user.level, message)
-                await message.channel.send("```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
-                                                userToUpdate.name, xp_gained))
+                await message.channel.send(
+                    "```diff\n+ @{0} Submission Successful! Score updated!\n+ {1}xp gained.```".format(
+                        userToUpdate.name, xp_gained))
 
     @commands.has_role("Staff")
     @commands.group(name="housekeeping", )
     async def housekeeing(self, ctx):
         try:
             await self.housekeeper(manual=True)
-            await self.commandSuccess(title="Manual housekeeping completed!", desc="Users can now submit again :)", channel=ctx.message.channel)
+            await self.commandSuccess(title="Manual housekeeping completed!", desc="Users can now submit again :)",
+                                      channel=ctx.message.channel)
         except Exception as e:
             await self.commandError(f"Error running housekeeper function: {e}", channel=ctx.message.channel)
 
@@ -1225,19 +1239,21 @@ class Submission(commands.Cog):
             logger.debug('housekeeping member {0}'.format(curr_member.name))
             # Update in batch
             # set user in beginning if its needed to PM a user
-            user = discord.utils.get(self.bot.get_all_members(), id=str(curr_member.id))
+            user = await self.bot.fetch_user(int(curr_member.id))
             if (user != None):
                 # check for warning until streak decay begins
                 days_left = (curr_member.expiry - curdate.date()).days
                 if (curr_member.decaywarning == True and curr_member.streak > 0):
                     if (days_left == 3):
                         try:
-                            await user.send("You have 3 days until your streak begins to expire!\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel")
+                            await user.send(
+                                "You have 3 days until your streak begins to expire!\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel")
                         except:
                             logger.error('couldn\'t send 3day message')
                     elif (days_left == 1):
                         try:
-                            await user.send("You have 1 day until your streak begins to expire!\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel")
+                            await user.send(
+                                "You have 1 day until your streak begins to expire!\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel")
                         except:
                             logger.error('couldn\'t send 1day message')
             else:
@@ -1253,17 +1269,18 @@ class Submission(commands.Cog):
                 # give a pm to warn about streak decay if member has left warnings on
                 if (curr_member.decaywarning == True and user != None):
                     try:
-                        await user.send("Your streak has decayed by {0} points! Your streak is now {1}.\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel".format(
-                                                        str(pointReduce), str(curr_member.streak)))
+                        await user.send(
+                            "Your streak has decayed by {0} points! Your streak is now {1}.\nIf you want to disable these warning messages then enter the command !streakwarning off in the #bot-channel".format(
+                                str(pointReduce), str(curr_member.streak)))
                     except:
                         logger.error('couldn\'t  send decay message')
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        if not manual:
-            channel = self.bot.get_channel(716049776105357323)
-            if channel is not None:
-                await channel.send("Housekeeping has finished running. You may now !submit and !pride again!")
+        # if not manual:
+        #     channel = self.bot.get_channel(716049776105357323)
+        #     if channel is not None:
+        #         await channel.send("Housekeeping has finished running. You may now !submit and !pride again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
@@ -1288,18 +1305,22 @@ class Submission(commands.Cog):
             pass
         return done  # this value will be None or a valid user, make sure to check
 
-    @commands.command('levelcheck', )
+    @commands.command('levelcheck')
     async def levelCheck(self, ctx):
         db_user = await self.getDBUser(str(ctx.message.author.id))
         if db_user is not None:
             added_roles = await self.updateRole(db_user.level, ctx.message)
             if len(added_roles) > 0:
-                embed = discord.Embed(title="Finished checking your roles!", description=f"**The roles that were added because of this check were:**\n{', '.join(added_roles)} ", color=discord.Color.green())
+                embed = discord.Embed(title="Finished checking your roles!",
+                                      description=f"**The roles that were added because of this check were:**\n{added_roles} ",
+                                      color=discord.Color.green())
             else:
-                embed = discord.Embed(title="Finished checking your roles!", description=f"All your roles are already up to date! No roles were added.", color=discord.Color.dark_orange())
-            await self.bot.say(embed=embed)
+                embed = discord.Embed(title="Finished checking your roles!",
+                                      description=f"All your roles are already up to date! No roles were added.",
+                                      color=discord.Color.dark_orange())
+            await ctx.send(embed=embed)
         else:
-            await self.bot.say("Could not find your user record!")
+            await ctx.send("Could not find your user record!")
 
     async def updateRole(self, current_level, message: discord.Message):
         levels = []
@@ -1310,22 +1331,21 @@ class Submission(commands.Cog):
 
         after_roles = await self.buildAfterRoles(levels, current_level, message.guild)
         if after_roles is False:
-            logger.exception(f"Failed to update {message.author}'s roles")
+            logger.exception(f"Failed to build 'after roles' for {message.author}")
             return
         if len(after_roles) == 0:
             return
-        added_roles = []
-        for role in after_roles:
-            if role not in before_roles:
-                try:
-                    await self.bot.add_roles(message.author, role)
-                    added_roles.append(role.name)
-                except Exception as e:
-                    logger.exception(f"Failed to add role {role.name} to {message.author.name}: {e}")
-                    return False
-                logger.success(f"Successfully added {role.name} to {message.author.name}")
-        return added_roles
-
+        added_roles = (list(set(after_roles) - set(before_roles)))
+        try:
+            await message.author.add_roles(*added_roles)
+        except Exception as e:
+            logger.exception(f"Failed to add roles to {message.author.name}: {e}")
+            return False
+        role_string = ""
+        for role in added_roles:
+            role_string += role.name + " "
+        logger.success(f"Successfully added {role_string} roles to {message.author.name}")
+        return role_string
 
     async def buildAfterRoles(self, levels: list, max_level: int, guild):
         after_roles = []
@@ -1341,7 +1361,6 @@ class Submission(commands.Cog):
                     continue
                 after_roles.append(role)
         return after_roles
-
 
     async def getUserStats(self, db_user):
         stats = {"user_id": str(db_user.id),
