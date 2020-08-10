@@ -900,7 +900,7 @@ class Submission(commands.Cog):
                     "Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
                     ctx.message.channel)
                 await asyncio.sleep(5)
-                await self.bot.delete_message(message)
+                await message.delete()
 
     @commands.has_role("Staff")
     @help.command(name="staff")
@@ -940,7 +940,7 @@ class Submission(commands.Cog):
                 "Error sending !help staff in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
                 ctx.message.channel)
             await asyncio.sleep(5)
-            await self.bot.delete_message(message)
+            await message.delete()
 
     @help.command(name="xp", )
     async def _xp(self, ctx):
@@ -966,7 +966,7 @@ class Submission(commands.Cog):
                 "Error sending !help xp in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
                 ctx.message.channel)
             await asyncio.sleep(5)
-            await self.bot.delete_message(message)
+            await message.delete()
 
     @help.command(name="content", )
     async def _content(self, ctx):
@@ -999,7 +999,7 @@ class Submission(commands.Cog):
                 "Error sending !help content in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
                 ctx.message.channel)
             await asyncio.sleep(5)
-            await self.bot.delete_message(message)
+            await message.delete()
 
     @help.command(name="events")
     async def _events(self, ctx):
@@ -1022,7 +1022,7 @@ class Submission(commands.Cog):
                 "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
                 ctx.message.channel)
             await asyncio.sleep(5)
-            await self.bot.delete_message(message)
+            await message.delete()
 
     @commands.has_role("Staff")
     @commands.group(name="xp", )
@@ -1485,7 +1485,7 @@ class Submission(commands.Cog):
             message = await self.commandError(channel=ctx.message.channel,
                                               message='Cannot respond within this channel. Please see #welcome for info on where you can use commands!')
             await asyncio.sleep(3)
-            await self.bot.delete_message(message)
+            await message.delete()
             return False
         # return True
 
