@@ -47,8 +47,8 @@ class Management(commands.Cog):
             git_dir = "./"
             try:
                 g = git.cmd.Git(git_dir)
-                g.pull()
-                embed = discord.Embed(title="Successfully pulled from repository", color=0x00df00)
+                updates = g.pull()
+                embed = discord.Embed(title="Successfully pulled from repository", color=0x00df00, description=f"```{updates}```")
                 await ctx.message.channel.send(embed=embed)
             except Exception as e:
                 errno, strerror = e.args
