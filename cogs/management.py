@@ -55,7 +55,7 @@ class Management(commands.Cog):
                 embed = discord.Embed(title="Command Error!",
                                       description=f"Git Pull Error: {errno} - {strerror}",
                                       color=0xff0007)
-                await ctx.message.channel(embed=embed)
+                await ctx.send(embed=embed)
         else:
             await ctx.message.channel("You don't have access to this command!")
 
@@ -71,7 +71,7 @@ class Management(commands.Cog):
                             value="Removes a channel to the list of channels users can user commands in.")
             embed.add_field(name="!response list",
                             value="Displays the list of channels users can user commands in.")
-            await ctx.message.channel(embed=embed)
+            await ctx.send(embed=embed)
 
     @response.command(name="add")
     async def _add(self, ctx, channel: discord.TextChannel = None):
@@ -129,7 +129,7 @@ class Management(commands.Cog):
             embed.add_field(name=f"{channel.name}",
                             value=f"ID: {channel}",
                             inline=False)
-        await ctx.message.channel(embed=embed)
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Management(bot))
