@@ -50,34 +50,33 @@ async def on_ready():
 
 
 @bot.command(pass_context=True)
-@commands.has_permissions(administrator=True)
+@commands.has_role("Staff")
 async def load(ctx, extension):
     try:
         bot.load_extension('cogs.' + extension)
         logger.debug(f'Loaded {extension}')
-        await bot.say(f'Loaded {extension}')
+        await ctx.send(f'Loaded {extension}')
     except Exception as error:
         logger.exception(f"Extension {extension} could not be loaded. [{error}]")
 
-# TODO: Add @commands.has_permissions(administrator=True) back to this command
-@bot.command(pass_context=True)
+@bot.command()
 @commands.has_role("Staff")
 async def reload(ctx, extension):
     try:
         bot.unload_extension('cogs.' + extension)
         bot.load_extension('cogs.' + extension)
         logger.debug(f'Reloaded {extension}')
-        await bot.say(f'Reloaded {extension}')
+        await ctx.send(f'Reloaded {extension}')
     except Exception as error:
         logger.exception(f"Extension {extension} could not be reloaded. [{error}]")
 
 @bot.command()
-@commands.has_permissions(administrator=True)
-async def unload(extension):
+@commands.has_role("Staff")
+async def unload(ctx, extension):
     try:
         bot.unload_extension('cogs.' + extension)
         logger.debug(f'Unloaded {extension}')
-        await bot.say(f'{extension} successfully unloaded')
+        await ctx.send(f'{extension} successfully unloaded')
     except Exception as error:
         logger.exception(f"Extension {extension} could not be unloaded. [{error}]")
 
