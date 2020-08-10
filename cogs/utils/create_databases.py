@@ -61,7 +61,7 @@ if __name__ == '__main__':
         # statements in raw SQL.
         Base.metadata.create_all(bind=engine)
         logger.success("Database file 'database.db' has been created")
-        os.rename('./database.db', './cogs/database.db')
+        os.rename('../database.db', './cogs/database.db')
         logger.success("database.db has been moved into the cogs folder")
     except Exception as e:
         logger.error("Unable to move database, please ensure that you have proper permissions "

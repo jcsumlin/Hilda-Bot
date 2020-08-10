@@ -11,7 +11,7 @@ from pytz import utc
 from .utils.dataIO import dataIO
 
 
-class Management:
+class Management(commands.cog):
     def __init__(self, bot):
         self.bot = bot
         scheduler = AsyncIOScheduler(timezone=utc)

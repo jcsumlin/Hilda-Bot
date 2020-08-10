@@ -8,7 +8,6 @@ class InvalidFileIO(Exception):
 
 class DataIO():
 
-
     def save_json(self, filename, data):
         """Atomically saves json file"""
         rnd = randint(1000, 9999)
