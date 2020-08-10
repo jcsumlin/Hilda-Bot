@@ -448,7 +448,7 @@ class Submission(commands.Cog):
                     else:
                         submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
-                    stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
+                    # stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
