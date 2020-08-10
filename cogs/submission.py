@@ -1025,7 +1025,7 @@ class Submission(commands.Cog):
             await message.delete()
 
     @commands.has_role("Staff")
-    @commands.group(name="xp", )
+    @commands.group(name="xp")
     async def xp(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(title="That's not how you use that command!",
@@ -1116,9 +1116,7 @@ class Submission(commands.Cog):
     async def normalSubmit(self, message, userToUpdate, comment, event_id: int = False):
         logger.debug('submitting for ' + str(userToUpdate.name))
         try:
-            jsonstr = json.dumps(message.attachments[0])
-            jsondict = json.loads(jsonstr)
-            url = jsondict['url']
+            url = message.attachments[0].url
         except:
             await self.commandError(
                 "You need to submit something for this command to work! Use the !help command to see more info on how to use this command.",
