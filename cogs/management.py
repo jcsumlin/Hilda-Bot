@@ -123,10 +123,10 @@ class Management(commands.Cog):
     async def _list(self, ctx):
         embed = discord.Embed(title="List of channels users can use commands in.")
         for channel in self.approvedChannels:
-            channel = self.bot.get_channel(int(channel)).name
+            channel = self.bot.get_channel(int(channel))
             if channel is None:
                 continue
-            embed.add_field(name=f"{channel}",
+            embed.add_field(name=f"{channel.name}",
                             value=f"ID: {channel}",
                             inline=False)
         await ctx.message.channel(embed=embed)
