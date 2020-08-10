@@ -1448,7 +1448,7 @@ class Submission(commands.Cog):
                 if role in [y.name for y in message.author.roles]:
                     return
                 else:
-                    await self.bot.add_roles(message.author, role)
+                    await message.author.add_roles(role)
             else:
                 logger.error(f"The role {role_name} does not exist skipping.")
 
