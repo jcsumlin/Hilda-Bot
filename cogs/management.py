@@ -127,7 +127,7 @@ class Management(commands.Cog):
             if channel is None:
                 continue
             embed.add_field(name=f"{channel.name}",
-                            value=f"ID: {channel}",
+                            value=f"ID: {channel.id}",
                             inline=False)
         await ctx.send(embed=embed)
 
