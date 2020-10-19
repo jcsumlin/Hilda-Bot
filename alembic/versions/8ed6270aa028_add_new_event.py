@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade():
-    pass
+    op.execute('INSERT INTO special_events (name) VALUES ("Drawtober Event 2020")')
 
 
 def downgrade():

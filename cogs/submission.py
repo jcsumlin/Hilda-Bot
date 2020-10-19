@@ -302,29 +302,29 @@ class Submission(commands.Cog):
                 except:
                     pass
 
-    # @commands.command()
-    # async def pride(self, ctx):
-    #     if ctx.message.channel.id == 716049776105357323 or ctx.message.guild.id in self.testServerIds:
-    #         if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
-    #             # do linksubmit
-    #             message = ctx.message.content[6:].lstrip(" ")
-    #             if message.startswith('https://') or message.startswith('http://'):
-    #                 comment = ""
-    #             else:
-    #                 comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-    #             try:
-    #                 await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=4)
-    #             except:
-    #                 pass
-    #         else:
-    #             try:
-    #                 # normal submit.
-    #                 comment = ctx.message.content[6:].lstrip(" ")
-    #                 await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=4)
-    #             except:
-    #                 pass
-    #     else:
-    #         await self.commandError("Please go to <#716049776105357323> to use this command", ctx.message.channel)
+    @commands.command()
+    async def drawtober(self, ctx):
+        if ctx.message.channel.id == 761302282486677515 or ctx.message.guild.id in self.testServerIds:
+            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
+                # do linksubmit
+                message = ctx.message.content[10:].lstrip(" ")
+                if message.startswith('https://') or message.startswith('http://'):
+                    comment = ""
+                else:
+                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
+                try:
+                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=5)
+                except:
+                    pass
+            else:
+                try:
+                    # normal submit.
+                    comment = ctx.message.content[10:].lstrip(" ")
+                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=5)
+                except:
+                    pass
+        else:
+            await self.commandError("Please go to <#761302282486677515> to use this command", ctx.message.channel)
 
     @commands.command()
     async def streakwarning(self, ctx, setting=None):
@@ -367,6 +367,13 @@ class Submission(commands.Cog):
                     db_user.levelnotification = False
                     self.session.commit()
                     await ctx.send(f"```diff\n+ Level up notification for {ctx.message.author} are now off!\n```")
+
+    # @commands.command()
+    # async def debug(self, ctx, emoji: discord.Emoji):
+    #     embed = discord.Embed(description=f"emoji: {emoji}", title=f"emoji: {emoji}")
+    #     embed.add_field(name="id", value=repr(emoji.id))
+    #     embed.add_field(name="name", value=repr(emoji.name))
+    #     await ctx.send(embed=embed)
 
     @commands.command()
     async def stats(self, ctx, user: discord.Member = None):
@@ -443,12 +450,17 @@ class Submission(commands.Cog):
                         name="<:PrideHeart2020:716501406684545126> Pride Event 2020 <:PrideHeart2020:716501406684545126>",
                         value=f"    **Submits**: {stats['total_pride_2020_submissions']}",
                         inline=False)
-                    if db_user.special_event_submitted is True:
-                        submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
-                    else:
-                        submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
+                if stats['total_drawtober_2020_submissions'] > 0:
+                    stats_embed.add_field(
+                        name="🎃 Drawtober Event 2020 🎃",
+                        value=f"    **Submits**: {stats['total_drawtober_2020_submissions']}",
+                        inline=False)
+                if db_user.special_event_submitted is True:
+                    submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
+                else:
+                    submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
                     # score_card = name_card + xp_card + adores_card + stats_card
-                    # stats_embed.add_field(name="Pride Event Submit Status", value=submit_status, inline=True)
+                stats_embed.add_field(name="Drawtober Event Submit Status", value=submit_status, inline=True)
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -1374,6 +1386,8 @@ class Submission(commands.Cog):
                      and_(Content.user == str(db_user.id), Content.event_id == 3)).count(),
                  "total_pride_2020_submissions": self.session.query(Content).filter(
                      and_(Content.user == str(db_user.id), Content.event_id == 4)).count(),
+                 "total_drawtober_2020_submissions": self.session.query(Content).filter(
+                     and_(Content.user == str(db_user.id), Content.event_id == 5)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
