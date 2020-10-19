@@ -33,7 +33,7 @@ from .utils.dataIO import dataIO
 class Submission(commands.Cog):
 
     def __init__(self, bot):
-        self.submission_triggers = ["submit", "pride", "ffce"]
+        self.submission_triggers = ["submit", "pride", "ffce", "drawtober"]
         self.bot = bot
         engine = create_engine('sqlite:///database.db')
         Base.metadata.bind = engine
@@ -887,16 +887,16 @@ class Submission(commands.Cog):
             embed_events = discord.Embed(title="Events",
                                          description="All commands related to HildaCord's current events",
                                          color=0x90BDD4)
-            embed_events.add_field(name="!pride",
-                                   value="Please go to <#716049776105357323> to use this command. To submit "
+            embed_events.add_field(name="!drawtober",
+                                   value="Please go to <#761302282486677515> to use this command. To submit "
                                          "content, drag and drop the file (.png, .gif, .jpg) "
-                                         "into discord and add '!pride [comment (optional)]' as a comment to it.",
+                                         "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
                                    inline=False)
-            embed_events.add_field(name="!pride [link] [comment (optional)]",
-                                   value="Please go to <#716049776105357323> to use this command. "
+            embed_events.add_field(name="!drawtober [link] [comment (optional)]",
+                                   value="Please go to <#761302282486677515> to use this command. "
                                          "If you'd like to submit via internet link, make sure you right click"
                                          " the image and select 'copy image location' and submit that URL using"
-                                         " the !pride command.",
+                                         " the !drawtober command.",
                                    inline=False)
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
@@ -1018,14 +1018,14 @@ class Submission(commands.Cog):
         embed_events = discord.Embed(title="Events",
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
-        embed_events.add_field(name="!pride",
-                               value="Please go to <#716049776105357323> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!pride [comment (optional)]' as a comment to it.",
+        embed_events.add_field(name="!drawtober",
+                               value="Please go to <#761302282486677515> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                                     "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
                                inline=False)
-        embed_events.add_field(name="!pride [link] [comment (optional)]",
-                               value="Please go to <#716049776105357323> to use this command. If you'd like to submit via internet link, make sure you right click"
+        embed_events.add_field(name="!drawtober [link] [comment (optional)]",
+                               value="Please go to <#761302282486677515> to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
-                                     " the !pride command.",
+                                     " the !drawtober command.",
                                inline=False)
         try:
             await ctx.send(ctx.message.author, embed=embed_events)
@@ -1287,10 +1287,10 @@ class Submission(commands.Cog):
         # commit all changes to the sheet at once
         self.session.commit()
         logger.success("housekeeping finished")
-        # if not manual:
-        #     channel = self.bot.get_channel(716049776105357323)
-        #     if channel is not None:
-        #         await channel.send("Housekeeping has finished running. You may now !submit and !pride again!")
+        if not manual:
+            channel = self.bot.get_channel(761302282486677515)
+            if channel is not None:
+                await channel.send("Housekeeping has finished running. You may now !submit and !drawtober again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
