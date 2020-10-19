@@ -304,7 +304,7 @@ class Submission(commands.Cog):
 
     @commands.command()
     async def drawtober(self, ctx):
-        if ctx.message.channel.id == 761302282486677515 or ctx.message.guild.id in self.testServerIds:
+        if ctx.message.channel.id == 761308316357754910 or ctx.message.guild.id in self.testServerIds:
             if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
                 # do linksubmit
                 message = ctx.message.content[10:].lstrip(" ")
@@ -888,12 +888,12 @@ class Submission(commands.Cog):
                                          description="All commands related to HildaCord's current events",
                                          color=0x90BDD4)
             embed_events.add_field(name="!drawtober",
-                                   value="Please go to <#761302282486677515> to use this command. To submit "
+                                   value="Please go to <#761308316357754910> to use this command. To submit "
                                          "content, drag and drop the file (.png, .gif, .jpg) "
                                          "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
                                    inline=False)
             embed_events.add_field(name="!drawtober [link] [comment (optional)]",
-                                   value="Please go to <#761302282486677515> to use this command. "
+                                   value="Please go to <#761308316357754910> to use this command. "
                                          "If you'd like to submit via internet link, make sure you right click"
                                          " the image and select 'copy image location' and submit that URL using"
                                          " the !drawtober command.",
@@ -1019,11 +1019,11 @@ class Submission(commands.Cog):
                                      description="All commands related to HildaCord's current events",
                                      color=0x90BDD4)
         embed_events.add_field(name="!drawtober",
-                               value="Please go to <#761302282486677515> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
+                               value="Please go to <#761308316357754910> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
                                      "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
                                inline=False)
         embed_events.add_field(name="!drawtober [link] [comment (optional)]",
-                               value="Please go to <#761302282486677515> to use this command. If you'd like to submit via internet link, make sure you right click"
+                               value="Please go to <#761308316357754910> to use this command. If you'd like to submit via internet link, make sure you right click"
                                      " the image and select 'copy image location' and submit that URL using"
                                      " the !drawtober command.",
                                inline=False)
@@ -1288,7 +1288,7 @@ class Submission(commands.Cog):
         self.session.commit()
         logger.success("housekeeping finished")
         if not manual:
-            channel = self.bot.get_channel(761302282486677515)
+            channel = self.bot.get_channel(761308316357754910)
             if channel is not None:
                 await channel.send("Housekeeping has finished running. You may now !submit and !drawtober again!")
 
