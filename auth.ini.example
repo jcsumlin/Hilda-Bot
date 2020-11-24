@@ -1,34 +1,18 @@
 [discord]
 TOKEN=
 PREFIX=!
-KUDOS_ID=<:ID:name>
+KUDOS_ID=<:ID:wumpusheart>
 KUDOS_REACTION_ID=
 LIVE=0
 
 [level-roles]
-lvl_0=Member
-lvl_5=Nitten
 lvl_10=Tide Mouse
-lvl_15=Elf
 lvl_20=Twig
-lvl_25=Woff
 lvl_30=Vittra
-lvl_35=Nisse
 lvl_40=Forest Giant
-lvl_45=Troll
 lvl_50=Adventurer
 lvl_60=Sparrow Scout
 lvl_70=Johanna
 lvl_80=Librarian
 lvl_90=Marra
 lvl_100=Mad Scientist
-lvl_120=Mountain Giant
-lvl_140=Weather Spirit
-lvl_160=Thunderbird
-lvl_180=Black Hound
-lvl_200=Lindworm
-lvl_220=Trevor
-lvl_240=Alfur
-lvl_260=David
-lvl_280=Frida
-lvl_300=Hilda

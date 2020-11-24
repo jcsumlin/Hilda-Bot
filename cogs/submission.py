@@ -33,7 +33,7 @@ from .utils.dataIO import dataIO
 class Submission(commands.Cog):
 
     def __init__(self, bot):
-        self.submission_triggers = ["submit", "pride", "ffce", "drawtober"]
+        self.submission_triggers = ["submit"]
         self.bot = bot
         engine = create_engine('sqlite:///database.db')
         Base.metadata.bind = engine
@@ -46,7 +46,6 @@ class Submission(commands.Cog):
         self.scheduler.start()
         self.auth = configparser.ConfigParser()
         self.auth.read('../auth.ini')
-        self.mee6leaderboardUrl = "https://mee6.xyz/api/plugins/levels/leaderboard/492572315138392064?limit=999"
         self.messageSetting = 0
         self.approvedChannels = dataIO.load_json("data/server/allowed_channels.json")
         self.bannedXPChannels = dataIO.load_json("data/xp/banned_channels.json")
@@ -61,7 +60,7 @@ class Submission(commands.Cog):
                 for member in guild.members:
                     members += 1
             self.messageSetting = 1
-            await self.bot.change_presence(activity=discord.Game(name=f'!help | on Hildacord with {members} members',
+            await self.bot.change_presence(activity=discord.Game(name=f'!help | Helping {members} members',
                                                                  url='https://www.patreon.com/botboi',
                                                                  type=1))
 
@@ -224,41 +223,6 @@ class Submission(commands.Cog):
         logger.debug(str(userToUpdate.name) + "'s url - " + url)
         await self.handleSubmit(message, userToUpdate, url, comment, event_id=event_id)
 
-    @commands.cooldown(1, 90, commands.BucketType.guild)
-    @commands.has_role("Staff")
-    @commands.command()
-    async def checkall(self, ctx):
-        if await self.checkChannel(ctx):
-            page = requests.get(self.mee6leaderboardUrl)
-            soup = BeautifulSoup(page.content, 'html.parser')
-            leaderboard = soup.prettify()
-            d = json.loads(leaderboard)['players']
-            users_updated = 0
-            for mee6_user in d:
-                db_user = await self.getDBUser(mee6_user['id'])
-                if (db_user == None):
-                    curdate = datetime.utcnow()
-                    discord_user = await self.bot.get_user_info(mee6_user['id'])
-                    new_user = User(name=discord_user.name, level=mee6_user['level'],
-                                    server_id=ctx.message.guild.id,
-                                    id=mee6_user['id'], startdate=curdate, currency=0,
-                                    streak=0, expiry=curdate, submitted=False, raffle=False, promptsadded=0,
-                                    totalsubmissions=0,
-                                    currentxp=0, adores=0, highscore=0, decaywarning=True, levelnotification=True,
-                                    xptime=(datetime.utcnow() - self.epoch).total_seconds(),
-                                    special_event_submitted=False)
-                    self.session.add(new_user)
-                    self.session.commit()
-                    users_updated += 1
-                else:
-                    db_user.level = mee6_user['level']
-                    self.session.commit()
-                    users_updated += 1
-            embed = discord.Embed(title="Mee6 Users Updated!",
-                                  description=f"{users_updated} User records were updated!",
-                                  color=0x47d740)
-            await ctx.send(ctx.message.channel, embed=embed)
-
     @commands.command()
     async def leaderboard(self, ctx):
         if await self.checkChannel(ctx):
@@ -303,30 +267,6 @@ class Submission(commands.Cog):
                     pass
 
     @commands.command()
-    async def drawtober(self, ctx):
-        if ctx.message.channel.id == 761308316357754910 or ctx.message.guild.id in self.testServerIds:
-            if ("https://" in ctx.message.content.lower() or "http://" in ctx.message.content.lower()):
-                # do linksubmit
-                message = ctx.message.content[10:].lstrip(" ")
-                if message.startswith('https://') or message.startswith('http://'):
-                    comment = ""
-                else:
-                    comment = re.search("([a-zA-Z\s]+) (https?:\/\/)", message).group(1)
-                try:
-                    await self.linkSubmit(ctx.message, ctx.message.author, comment, event_id=5)
-                except:
-                    pass
-            else:
-                try:
-                    # normal submit.
-                    comment = ctx.message.content[10:].lstrip(" ")
-                    await self.normalSubmit(ctx.message, ctx.message.author, comment, event_id=5)
-                except:
-                    pass
-        else:
-            await self.commandError("Please go to <#761302282486677515> to use this command", ctx.message.channel)
-
-    @commands.command()
     async def streakwarning(self, ctx, setting=None):
         if await self.checkChannel(ctx):
             db_user = await self.getDBUser(str(ctx.message.author.id))
@@ -368,12 +308,6 @@ class Submission(commands.Cog):
                     self.session.commit()
                     await ctx.send(f"```diff\n+ Level up notification for {ctx.message.author} are now off!\n```")
 
-    # @commands.command()
-    # async def debug(self, ctx, emoji: discord.Emoji):
-    #     embed = discord.Embed(description=f"emoji: {emoji}", title=f"emoji: {emoji}")
-    #     embed.add_field(name="id", value=repr(emoji.id))
-    #     embed.add_field(name="name", value=repr(emoji.name))
-    #     await ctx.send(embed=embed)
 
     @commands.command()
     async def stats(self, ctx, user: discord.Member = None):
@@ -432,35 +366,8 @@ class Submission(commands.Cog):
                 stats_embed.add_field(name="Stats",
                                       value=f"    **Submits**: {stats['total_submissions']} | **Tokens**: {stats['coins']}",
                                       inline=False)
-                if stats['total_pride_submissions'] > 0:
-                    stats_embed.add_field(name=":gay_pride_flag: Pride Event 2019 :gay_pride_flag:",
-                                          value=f"    **Submits**: {stats['total_pride_submissions']}",
-                                          inline=False)
-                if stats['total_inktober_submissions'] > 0:
-                    stats_embed.add_field(name=":pen_fountain: Inktober Event 2019 :pen_fountain:",
-                                          value=f"    **Submits**: {stats['total_inktober_submissions']}",
-                                          inline=False)
-                if stats['total_ffce_submissions'] > 0:
-                    stats_embed.add_field(
-                        name="<a:blobdance:569473285436211210> FFCE Event 2020 <a:blobdance:569473285436211210>",
-                        value=f"    **Submits**: {stats['total_ffce_submissions']}",
-                        inline=False)
-                if stats['total_pride_2020_submissions'] > 0:
-                    stats_embed.add_field(
-                        name="<:PrideHeart2020:716501406684545126> Pride Event 2020 <:PrideHeart2020:716501406684545126>",
-                        value=f"    **Submits**: {stats['total_pride_2020_submissions']}",
-                        inline=False)
-                if stats['total_drawtober_2020_submissions'] > 0:
-                    stats_embed.add_field(
-                        name="🎃 Drawtober Event 2020 🎃",
-                        value=f"    **Submits**: {stats['total_drawtober_2020_submissions']}",
-                        inline=False)
-                if db_user.special_event_submitted is True:
-                    submit_status = f":white_check_mark: {'You' if user == None else 'They'} have submitted today"
-                else:
-                    submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
-                    # score_card = name_card + xp_card + adores_card + stats_card
-                stats_embed.add_field(name="Drawtober Event Submit Status", value=submit_status, inline=True)
+
+                submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
 
                 # get the date of the expiry
                 # Streak expires at 7am UTC on that day
@@ -796,7 +703,7 @@ class Submission(commands.Cog):
     @commands.group()
     async def help(self, ctx):
         if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
-            embed = discord.Embed(title="Hildabot Help",
+            embed = discord.Embed(title="Wumpus Bot Help",
                                   description='Here is a list of all of the commands you can use! [Bot made by J\_C\_\_\_#8947]',
                                   color=0x90BDD4)
             embed.add_field(name="!help [module title]",
@@ -847,7 +754,7 @@ class Submission(commands.Cog):
                                         "gained from it. (Staff only!)",
                                   inline=False)
             embed_xp = discord.Embed(title="XP",
-                                     description="All commands related to HildaCord's leveling system",
+                                     description="All commands related to WumpusCord's leveling system",
                                      color=0x90BDD4)
             embed_xp.add_field(name="!leaderboard",
                                value="Shows you the top 10 users in in the server.",
@@ -863,7 +770,7 @@ class Submission(commands.Cog):
                                inline=False)
 
             embed_content = discord.Embed(title="Content",
-                                          description="All commands related to HildaBot's content curration features",
+                                          description="All commands related to WumpusBot's content curration features",
                                           color=0x90BDD4)
             embed_content.add_field(name="!submit",
                                     value="To submit content, drag and drop the file (.png, .gif, .jpg) "
@@ -885,7 +792,7 @@ class Submission(commands.Cog):
             #                 value="Add a random idea to the \"randomidea\" list!",
             #                 inline=False)
             embed_events = discord.Embed(title="Events",
-                                         description="All commands related to HildaCord's current events",
+                                         description="All commands related to WumpusCord's current events",
                                          color=0x90BDD4)
             embed_events.add_field(name="!drawtober",
                                    value="Please go to <#761308316357754910> to use this command. To submit "
@@ -957,7 +864,7 @@ class Submission(commands.Cog):
     @help.command(name="xp", )
     async def _xp(self, ctx):
         embed_xp = discord.Embed(title="XP",
-                                 description="All commands related to HildaCord's leveling system",
+                                 description="All commands related to WumpusCord's leveling system",
                                  color=0x90BDD4)
         embed_xp.add_field(name="!leaderboard",
                            value="Shows you the top 10 users in in the server.",
@@ -983,7 +890,7 @@ class Submission(commands.Cog):
     @help.command(name="content", )
     async def _content(self, ctx):
         embed_content = discord.Embed(title="Content",
-                                      description="All commands related to HildaBot's content curation features",
+                                      description="All commands related to WumpusBot's content curation features",
                                       color=0x90BDD4)
         embed_content.add_field(name="!submit",
                                 value="To submit content, drag and drop the file (.png, .gif, .jpg) "
@@ -1016,7 +923,7 @@ class Submission(commands.Cog):
     @help.command(name="events")
     async def _events(self, ctx):
         embed_events = discord.Embed(title="Events",
-                                     description="All commands related to HildaCord's current events",
+                                     description="All commands related to WumpusCord's current events",
                                      color=0x90BDD4)
         embed_events.add_field(name="!drawtober",
                                value="Please go to <#761308316357754910> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
