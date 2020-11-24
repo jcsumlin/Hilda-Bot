@@ -1,18 +1,18 @@
 [discord]
 TOKEN=
 PREFIX=!
-KUDOS_ID=<:ID:wumpusheart>
-KUDOS_REACTION_ID=
+KUDOS_ID=<:780575370834477087:WumpusHeart>
+KUDOS_REACTION_ID=780575370834477087
 LIVE=0
 
 [level-roles]
-lvl_10=Tide Mouse
-lvl_20=Twig
-lvl_30=Vittra
-lvl_40=Forest Giant
-lvl_50=Adventurer
-lvl_60=Sparrow Scout
-lvl_70=Johanna
-lvl_80=Librarian
-lvl_90=Marra
-lvl_100=Mad Scientist
+lvl_10=Wumpus
+lvl_20=Nelly
+lvl_30=Peppe
+lvl_40=Clyde
+lvl_50=Cap
+lvl_60=Rumi
+lvl_70=Leif
+lvl_80=Graggle
+lvl_90=Froggie
+lvl_100=Tipp
