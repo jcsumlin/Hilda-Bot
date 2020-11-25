@@ -876,7 +876,7 @@ class Submission(commands.Cog):
                                         ctx.message.channel)
 
     @xp.command(name="remove")
-    async def _remove(self, channel: discord.TextChannel = None):
+    async def _remove(self, ctx, channel: discord.TextChannel = None):
         if channel == None:
             embed = discord.Embed(title="That's not how you use that command!",
                                   description="!xp remove #channel-to-delete",
