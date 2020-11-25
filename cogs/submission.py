@@ -883,7 +883,7 @@ class Submission(commands.Cog):
                                   color=discord.Color.red())
             await ctx.send(embed=embed)
         else:
-            channel_id = str(channel.id)
+            channel_id = channel.id
             if channel_id in self.bannedXPChannels:
                 self.bannedXPChannels.remove(channel_id)
                 try:
