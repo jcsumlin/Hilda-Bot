@@ -881,7 +881,7 @@ class Submission(commands.Cog):
             embed = discord.Embed(title="That's not how you use that command!",
                                   description="!xp remove #channel-to-delete",
                                   color=discord.Color.red())
-            await self.bot.say(embed=embed)
+            await ctx.send(embed=embed)
         else:
             channel_id = str(channel.id)
             if channel_id in self.bannedXPChannels:
@@ -891,15 +891,15 @@ class Submission(commands.Cog):
                     embed = discord.Embed(
                         title=f"Successfully removed channel {channel.name} from the banned list!",
                         color=discord.Color.green())
-                    await self.bot.say(embed=embed)
+                    await ctx.send(embed=embed)
                 except:
                     embed = discord.Embed(title="Error while saving file!!",
                                           color=discord.Color.red())
-                    await self.bot.say(embed=embed)
+                    await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(title="Channel is not in the list!",
                                       color=discord.Color.red())
-                await self.bot.say(embed=embed)
+                await ctx.send(embed=embed)
 
     @xp.command(name='list')
     async def _list(self, ctx):
