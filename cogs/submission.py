@@ -1122,7 +1122,7 @@ class Submission(commands.Cog):
         db_user = await self.getDBUser(str(ctx.message.author.id))
         if db_user is not None:
             added_roles = await self.updateRole(db_user.level, ctx.message)
-            if len(added_roles) > 0:
+            if added_roles is not None and len(added_roles) > 0:
                 embed = discord.Embed(title="Finished checking your roles!",
                                       description=f"**The roles that were added because of this check were:**\n{added_roles} ",
                                       color=discord.Color.green())
