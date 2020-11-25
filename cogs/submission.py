@@ -427,42 +427,6 @@ class Submission(commands.Cog):
                     '```diff\n+ {0} hours, {1} minutes, and {2} seconds left to submit for today!\n! Resets at 23:00 EST```'.format(
                         difference_hours, difference_minutes, seconds_to_work))
 
-    # @commands.command()
-    # async def idea(self, ctx):
-    #     if await self.checkChannel(ctx):
-    #         serv = ctx.message.server
-    #         # try to find user in database using id
-    #         db_user = await self.getDBUser(ctx.message.author.id)
-    #
-    #         if (db_user == None):
-    #             await ctx.send("```diff\n- You need to be registered to suggest prompts.\n```")
-    #         else:
-    #             if ctx.message.content[5:].lstrip(" ") == "":
-    #                 await self.commandError("Your must specify a prompt suggestion for this command to work! !idea {your brilliant idea}",
-    #                                   ctx.message.channel)
-    #                 return
-    #             db_user.promptsadded = newpromptscore = db_user.promptsadded + 1
-    #             self.session.commit()
-    #             await ctx.send("```diff\n+ Your prompt suggestion has been recorded!\n```")
-    #             # if newpromptscore == 20:
-    #             #     for rank in serv.roles:
-    #             #         if rank.name == "Idea Machine":
-    #             #             await self.bot.add_roles(ctx.message.author, rank)
-    #             #             await ctx.send(
-    #             #                                       "```Python\n @{0} Achievement Unlocked: Idea Machine\n```".format(
-    #             #                                           ctx.message.author.name))
-    #             #         else:
-    #             #             try:
-    #             #                 role = self.bot.create_role(name="Idea Machine")
-    #             #                 logger.success("Role created: Idea Machine")
-    #             #                 await self.bot.add_roles(ctx.message.author, rank)
-    #             #             except Exception:
-    #             #                 logger.error("Could not create role: Idea Machine")
-    #             #                 await ctx.send(
-    #             #                                             "```diff\n- Could not create role: Idea Machine. Please check bot permissions.\n```")
-    #
-    #             with open('../prompts.txt', 'a+') as fp:
-    #                 fp.write(ctx.message.content[6:] + '\n')
 
     async def register(self, message):
         curdate = datetime.utcnow()
@@ -495,38 +459,12 @@ class Submission(commands.Cog):
                             special_event_submitted=False)
             # add to session
             self.session.add(new_user)
-            # # give relevant roles
-            # serv = ctx.message.server
-            # role = discord.utils.get(serv.roles, name="0+ Streak")
-            # user = ctx.message.author
-            # if role is None:
-            #     await self.bot.create_role(serv, name='0+ Streak')
-            #     role_new = discord.utils.get(serv.roles, name="0+ Streak")
-            #     await self.bot.add_roles(user, role_new)
-            # else:
-            #     await self.bot.add_roles(user, role)
 
-            # for rank in serv.roles:
-            #     if rank.name == "Artists":
-            #         await self.bot.add_roles(ctx.message.author, rank)
-            #     else:
-            #         try:
-            #             rank = self.bot.create_role(name='Artists')
-            #             await self.bot.add_roles(ctx.message.author, rank)
-            #         except Exception:
-            #             logger.error('Could not create/assign role: Artists')
-            # commit session
             self.session.commit()
             logger.success(f"Successfully registered {message.author.name}")
         else:
             logger.error(f"{message.author.name} is already registered!")
 
-    # @commands.command()
-    # async def randomidea(self, ctx):
-    #     if await self.checkChannel(ctx):
-    #         with open("../prompts.txt", "r") as f:
-    #             lines = f.read().split('\n')
-    #         await ctx.send("```diff\n{}\n```".format(random.choice(lines)))
 
     @commands.has_role('Staff')
     @commands.command()
@@ -703,12 +641,12 @@ class Submission(commands.Cog):
     @commands.group()
     async def help(self, ctx):
         if await self.checkChannel(ctx) and ctx.invoked_subcommand is None:
-            embed = discord.Embed(title="Wumpus Bot Help",
+            embed = discord.Embed(title="WumpusBot Help",
                                   description='Here is a list of all of the commands you can use! [Bot made by J\_C\_\_\_#8947]',
                                   color=0x90BDD4)
             embed.add_field(name="!help [module title]",
                             value="Use any of the module's title to see the help for just that section. (reduces spam)")
-            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
+            # embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/503498544485892100.png")
             staff = False
             if True:
                 role_names = [role.name for role in ctx.message.author.roles]
@@ -785,26 +723,7 @@ class Submission(commands.Cog):
                                     value="The !timeleft command will let you know how much longer you have "
                                           "left to submit for the day!",
                                     inline=False)
-            # embed_content.add_field(name="!randomidea",
-            #                 value="Having trouble figuring out what to create?",
-            #                 inline=False)
-            # embed_content.add_field(name="!idea [idea]",
-            #                 value="Add a random idea to the \"randomidea\" list!",
-            #                 inline=False)
-            embed_events = discord.Embed(title="Events",
-                                         description="All commands related to WumpusCord's current events",
-                                         color=0x90BDD4)
-            embed_events.add_field(name="!drawtober",
-                                   value="Please go to <#761308316357754910> to use this command. To submit "
-                                         "content, drag and drop the file (.png, .gif, .jpg) "
-                                         "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
-                                   inline=False)
-            embed_events.add_field(name="!drawtober [link] [comment (optional)]",
-                                   value="Please go to <#761308316357754910> to use this command. "
-                                         "If you'd like to submit via internet link, make sure you right click"
-                                         " the image and select 'copy image location' and submit that URL using"
-                                         " the !drawtober command.",
-                                   inline=False)
+
             embed.set_footer(text="If you have any questions or concerns, please contact a Staff "
                                   "member.")
             try:
@@ -813,7 +732,6 @@ class Submission(commands.Cog):
                     await ctx.message.author.send(embed=embed_admin)
                 await ctx.message.author.send(embed=embed_xp)
                 await ctx.message.author.send(embed=embed_content)
-                await ctx.message.author.send(embed=embed_events)
             except discord.Forbidden:
                 message = await self.commandError(
                     "Error sending !help in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
@@ -920,28 +838,6 @@ class Submission(commands.Cog):
             await asyncio.sleep(5)
             await message.delete()
 
-    @help.command(name="events")
-    async def _events(self, ctx):
-        embed_events = discord.Embed(title="Events",
-                                     description="All commands related to WumpusCord's current events",
-                                     color=0x90BDD4)
-        embed_events.add_field(name="!drawtober",
-                               value="Please go to <#761308316357754910> to use this command. To submit content, drag and drop the file (.png, .gif, .jpg) "
-                                     "into discord and add '!drawtober [comment (optional)]' as a comment to it.",
-                               inline=False)
-        embed_events.add_field(name="!drawtober [link] [comment (optional)]",
-                               value="Please go to <#761308316357754910> to use this command. If you'd like to submit via internet link, make sure you right click"
-                                     " the image and select 'copy image location' and submit that URL using"
-                                     " the !drawtober command.",
-                               inline=False)
-        try:
-            await ctx.send(ctx.message.author, embed=embed_events)
-        except discord.Forbidden:
-            message = await self.commandError(
-                "Error sending !help events in your DMs, are you sure you have them enabled for this server? (right click server -> Privacy Settings)",
-                ctx.message.channel)
-            await asyncio.sleep(5)
-            await message.delete()
 
     @commands.has_role("Staff")
     @commands.group(name="xp")
@@ -1092,7 +988,6 @@ class Submission(commands.Cog):
                     current_level = current_level + 1
                     logger.debug("Checking Roles")
                     await self.updateRole(current_level, message)
-                    logger.debug("Checked Roles")
                     new_xp_total = new_xp_total - next_level_required_xp
                     db_user.level = int(current_level)
                     db_user.currentxp = int(new_xp_total)
@@ -1197,7 +1092,7 @@ class Submission(commands.Cog):
         if not manual:
             channel = self.bot.get_channel(761308316357754910)
             if channel is not None:
-                await channel.send("Housekeeping has finished running. You may now !submit and !drawtober again!")
+                await channel.send("Housekeeping has finished running. You may now !submit again!")
 
     def getDBSubmission(self, messageID):
         submission = None  # return none if we can't find a user
@@ -1285,16 +1180,6 @@ class Submission(commands.Cog):
                  "total_submissions": db_user.totalsubmissions,
                  # TODO: total_pride_submissions will use the db_user.name since the
                  #  change to storing the useIDs rather than names was made after that event
-                 "total_pride_submissions": self.session.query(Content).filter(
-                     and_(Content.user == db_user.name, Content.event_id == 1)).count(),
-                 "total_inktober_submissions": self.session.query(Content).filter(
-                     and_(Content.user == str(db_user.id), Content.event_id == 2)).count(),
-                 "total_ffce_submissions": self.session.query(Content).filter(
-                     and_(Content.user == str(db_user.id), Content.event_id == 3)).count(),
-                 "total_pride_2020_submissions": self.session.query(Content).filter(
-                     and_(Content.user == str(db_user.id), Content.event_id == 4)).count(),
-                 "total_drawtober_2020_submissions": self.session.query(Content).filter(
-                     and_(Content.user == str(db_user.id), Content.event_id == 5)).count(),
                  "xp": db_user.currentxp,
                  "level": db_user.level,
                  "coins": db_user.currency,
