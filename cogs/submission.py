@@ -366,7 +366,7 @@ class Submission(commands.Cog):
                                       value=f"{self.auth.get('discord', 'KUDOS_ID')} **Given**: {stats['adores_given']} | {self.auth.get('discord', 'KUDOS_ID')} **Received**: {stats['adores_gotten']}",
                                       inline=True)
                 stats_embed.add_field(name="Stats",
-                                      value=f"    **Submits**: {stats['total_submissions']} | **Tokens**: {stats['coins']}",
+                                      value=f"    **Submits**: {stats['total_submissions']}",
                                       inline=False)
 
                 submit_status = f":regional_indicator_x: {'You' if user == None else 'They'} have not submitted today."
@@ -563,7 +563,8 @@ class Submission(commands.Cog):
     @commands.has_role("Staff")
     @commands.command()
     async def rollback(self, ctx, messageID=None):
-        if await self.checkChannel(ctx):
+        # #Creative and #Fanart
+        if ctx.channel.id in [780685976413667349,780691485577576520] or await self.checkChannel(ctx):
             submission = self.getDBSubmission(str(messageID))
             if submission is None:
                 await ctx.send(
