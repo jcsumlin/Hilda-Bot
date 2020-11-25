@@ -265,6 +265,8 @@ class Submission(commands.Cog):
                     await self.normalSubmit(ctx.message, ctx.message.author, comment)
                 except:
                     pass
+        else:
+            await self.commandError("Please go to either <#780685976413667349> or <#780691485577576520> to use this command!", ctx.channel)
 
     @commands.command()
     async def streakwarning(self, ctx, setting=None):
@@ -1287,7 +1289,7 @@ class Submission(commands.Cog):
             return True
         else:
             message = await self.commandError(channel=ctx.message.channel,
-                                              message='Cannot respond within this channel. Please see #welcome for info on where you can use commands!')
+                                              message='Please go to <#780862401297383434> to use this command!')
             await asyncio.sleep(3)
             await message.delete()
             return False
